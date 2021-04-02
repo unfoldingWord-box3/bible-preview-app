@@ -54,18 +54,13 @@ export default function App(props) {
  *    },
   */
   useEffect(() => {
-    if ( state && state.chapter && state.verse ) {
-      // continue
-    } else {
-      return
-    }
-
+    const bookParameter    = `${state.bookId}`.toUpperCase()
     const chapterParameter = `chapter/${state.chapter}`
     const verseParameter   = `verse/${state.verse}`
     const gql = `{
       processor
       packageVersion
-      documents {
+      documents(withBook: "${bookParameter}") {
           mainSequence {
               blocks(withScopes:["${chapterParameter}", "${verseParameter}"]) {
                 text(normalizeSpace: true)
@@ -108,7 +103,7 @@ export default function App(props) {
       }
     }
 
-  }, [state, importedBooks]);
+  }, [state.bookId, state.chapter, state.verse, importedBooks]);
 
   return (
     <div>
