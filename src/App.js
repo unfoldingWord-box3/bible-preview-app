@@ -8,8 +8,13 @@ import Button from "@material-ui/core/Button";
 import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from './utils/dcsApis';
 
+import {Proskomma} from 'proskomma';
+
+const pk = new Proskomma();
+
+
 export default function App(props) {
-  const [content, setContent] = useState("Waiting...");
+  const [contentStatus, setContentStatus] = useState("Waiting...");
   const {
     initialBook,
     initialChapter,
@@ -44,8 +49,18 @@ export default function App(props) {
   */
   useEffect(() => {
     const fetchData = async () => {
-       setContent( await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId) )
+      //setContent( await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId) )
+      setContentStatus("Loading:"+state.bookId);
+      const text = await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId);
+      setContentStatus("Book Retrieved");
+      pk.importDocument(
+        {lang: "eng", abbr: "tit"},
+        "usfm",
+        text
+      );
+      setContentStatus("Imported into PK")
     }
+
     state.bookId && fetchData();
   }, [state.bookId]);
 
@@ -164,7 +179,7 @@ export default function App(props) {
             color="textPrimary"
             display="inline"
           >
-            {`${content}`}
+            {`${contentStatus}`}
           </Typography>
         </CardContent>
       </Card>
