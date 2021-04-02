@@ -1,8 +1,8 @@
-import Path from 'path';
+//import Path from 'path';
 import localforage from 'localforage';
 import { setup } from 'axios-cache-adapter';
-import _ from "lodash";
-import { base_url, apiPath } from '../common/constants'
+//import _ from "lodash";
+import { base_url } from '../common/constants'
 import * as books from '../common/books'
 
 const baseURL = base_url+'/';

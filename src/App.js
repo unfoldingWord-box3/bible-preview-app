@@ -5,6 +5,7 @@ import CardActions from "@material-ui/core/CardActions";
 import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
 import Button from "@material-ui/core/Button";
+import ReactJson from 'react-json-view'; 
 import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from './utils/dcsApis';
 
@@ -14,7 +15,12 @@ const pk = new Proskomma();
 
 
 export default function App(props) {
+  // state variables
   const [contentStatus, setContentStatus] = useState("Waiting...");
+  const [importedBooks, setImportedBooks] = useState([]);
+  const [queryResults, setQueryResults]   = useState({})
+
+  // deconstructed parameters
   const {
     initialBook,
     initialChapter,
@@ -48,21 +54,61 @@ export default function App(props) {
  *    },
   */
   useEffect(() => {
+    if ( state && state.chapter && state.verse ) {
+      // continue
+    } else {
+      return
+    }
+
+    const chapterParameter = `chapter/${state.chapter}`
+    const verseParameter   = `verse/${state.verse}`
+    const gql = `{
+      processor
+      packageVersion
+      documents {
+          mainSequence {
+              blocks(withScopes:["${chapterParameter}", "${verseParameter}"]) {
+                text(normalizeSpace: true)
+              }
+          }
+      }
+    }`
+
     const fetchData = async () => {
       //setContent( await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId) )
       setContentStatus("Loading:"+state.bookId);
       const text = await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId);
       setContentStatus("Book Retrieved");
       pk.importDocument(
-        {lang: "eng", abbr: "tit"},
+        {lang: "eng", abbr: state.bookId},
         "usfm",
         text
       );
-      setContentStatus("Imported into PK")
+      setContentStatus("Imported into PK:");
+      console.log("before query")
+      try {
+        let qresults = await pk.gqlQuery(gql);
+        console.log("qresults:", qresults, typeof qresults);
+        const data =JSON.parse(JSON.stringify(qresults));
+        setQueryResults(data);
+      } catch (err) {
+        console.log("err:", err);
+        //setQueryResults(err)
+      }
+      console.log("after query")
     }
 
-    state.bookId && fetchData();
-  }, [state.bookId]);
+
+    if ( state.bookId ) {
+      if ( ! importedBooks.includes( state.bookId ) ) {
+        fetchData();
+        let _importedBooks = importedBooks;
+        _importedBooks.push(state.bookId);
+        setImportedBooks(_importedBooks);
+      }
+    }
+
+  }, [state, importedBooks]);
 
   return (
     <div>
@@ -184,6 +230,41 @@ export default function App(props) {
         </CardContent>
       </Card>
     
+      <Card variant="outlined">
+        <CardContent>
+          <Typography
+            color="textPrimary"
+            display="inline"
+          >
+            Imported Books are: 
+            {importedBooks.join()}
+          </Typography>
+        </CardContent>
+      </Card>
+    
+      <Card variant="outlined">
+        <CardContent>
+          <ReactJson src={queryResults} />
+        </CardContent>
+      </Card>
+    
     </div>
   );
 }
+
+
+/* example query
+
+<ReactJson src={my_json_object} />
+{
+    processor
+    packageVersion
+    documents {
+        mainSequence {
+            blocks(withScopes:["chapter/1", "verse/1"]) {
+              text(normalizeSpace: true)
+            }
+        }
+    }
+}
+*/
