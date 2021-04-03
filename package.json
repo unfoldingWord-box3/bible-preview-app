@@ -1,9 +1,13 @@
 {
-  "name": "bible-ref-demo",
+  "name": "bible-ref-pk-demo",
   "version": "1.0.0",
   "description": "",
+  "homepage": "https://mandolyte.github.io/bible-ref-pk-demo/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mandolyte/bible-ref-pk-demo"
+  },
   "keywords": [],
-  "main": "src/index.js",
   "dependencies": {
     "@material-ui/core": "4.11.0",
     "@material-ui/icons": "4.9.1",
