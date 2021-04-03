@@ -55,52 +55,47 @@ export default function App(props) {
   */
   useEffect(() => {
     const bookParameter    = `${state.bookId}`.toUpperCase()
-    const chapterParameter = `chapter/${state.chapter}`
-    const verseParameter   = `verse/${state.verse}`
+    const chapterParameter = `${state.chapter}`
+    const verseParameter   = `${state.verse}`
     const gql = `{
       processor
       packageVersion
       documents(withBook: "${bookParameter}") {
-          mainSequence {
-              blocks(withScopes:["${chapterParameter}", "${verseParameter}"]) {
-                text(normalizeSpace: true)
-              }
-          }
+        cv (chapter:"${chapterParameter}" verses:["${verseParameter}"]) 
+          { text }
       }
     }`
 
     const fetchData = async () => {
-      //setContent( await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId) )
-      setContentStatus("Loading:"+state.bookId);
-      const text = await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId);
-      setContentStatus("Book Retrieved");
-      pk.importDocument(
-        {lang: "eng", abbr: state.bookId},
-        "usfm",
-        text
-      );
-      setContentStatus("Imported into PK:");
-      console.log("before query")
-      try {
-        let qresults = await pk.gqlQuery(gql);
-        console.log("qresults:", qresults, typeof qresults);
-        const data =JSON.parse(JSON.stringify(qresults));
-        setQueryResults(data);
-      } catch (err) {
-        console.log("err:", err);
-        //setQueryResults(err)
-      }
-      console.log("after query")
-    }
-
-
-    if ( state.bookId ) {
-      if ( ! importedBooks.includes( state.bookId ) ) {
-        fetchData();
+      if ( ! importedBooks.includes(state.bookId) ) {
+        setContentStatus("Loading:"+state.bookId);
+        const text = await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId);
+        setContentStatus("Book Retrieved");
+        pk.importDocument(
+          {lang: "eng", abbr: state.bookId},
+          "usfm",
+          text
+        );
+        setContentStatus("Imported into PK:"+state.bookId);
         let _importedBooks = importedBooks;
         _importedBooks.push(state.bookId);
         setImportedBooks(_importedBooks);
       }
+      try {
+        let qresults = await pk.gqlQuery(gql);
+        console.log("query:", gql)
+        console.log("query results:", qresults);
+        const data =JSON.parse(JSON.stringify(qresults));
+        setQueryResults(data);
+      } catch (err) {
+        console.log("pk.gqlQuery() Error:", err);
+        setQueryResults(err)
+      }
+    }
+
+
+    if ( state.bookId ) {
+        fetchData();
     }
 
   }, [state.bookId, state.chapter, state.verse, importedBooks]);
@@ -249,7 +244,7 @@ export default function App(props) {
 
 
 /* example query
-
+cv (chapter:"3" verses:["6"]) { scopeLabels, items { type subType payload } tokens { subType payload } text }
 <ReactJson src={my_json_object} />
 {
     processor
@@ -262,4 +257,21 @@ export default function App(props) {
         }
     }
 }
+
+    const bookParameter    = `${state.bookId}`.toUpperCase()
+    const chapterParameter = `chapter/${state.chapter}`
+    const verseParameter   = `verse/${state.verse}`
+
+    const gql = `{
+      processor
+      packageVersion
+      documents(withBook: "${bookParameter}") {
+          mainSequence {
+              blocks(withScopes:["${chapterParameter}", "${verseParameter}"]) {
+                text(normalizeSpace: true)
+              }
+          }
+      }
+    }`
+
 */
