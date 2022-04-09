@@ -5,7 +5,7 @@ import CardActions from "@material-ui/core/CardActions";
 import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
 import Button from "@material-ui/core/Button";
-import ReactJson from 'react-json-view'; 
+// import ReactJson from 'react-json-view'; 
 import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from './utils/dcsApis';
 
@@ -109,7 +109,7 @@ export default function App(props) {
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center"
+          // justifyContent: "center"
         }}
       >
         <BibleReference status={state} actions={actions} style={style} />
@@ -120,30 +120,6 @@ export default function App(props) {
 
       <Card variant="outlined">
         <CardContent>
-          <Typography
-            style={{ fontWeight: "bold" }}
-            color="textPrimary"
-            display="inline"
-          >
-            {`bible-reference-rcl`}
-          </Typography>
-          <Typography color="textPrimary" display="inline">
-            {`\u00A0component is shown above ^^^`}
-          </Typography>
-          <br />
-          <br />
-          <Typography
-            style={{ fontWeight: "bold" }}
-            color="textPrimary"
-            display="inline"
-          >
-            {`bible-reference-rcl`}
-          </Typography>
-          <Typography color="textPrimary" gutterBottom display="inline">
-            {`\u00A0state examples below (dynamically updated as reference changes):`}
-          </Typography>
-          <br />
-          <br />
           <Typography
             style={{ marginLeft: "50px" }}
             color="textPrimary"
@@ -179,9 +155,6 @@ export default function App(props) {
           </Typography>
         </CardContent>
         <CardActions>
-          <Typography color="textPrimary">
-            {`action examples that are using API to change the current reference:`}
-          </Typography>
 
           <Button
             variant="outlined"
@@ -234,7 +207,19 @@ export default function App(props) {
     
       <Card variant="outlined">
         <CardContent>
-          <ReactJson src={queryResults} />
+          {/* <ReactJson src={queryResults} /> */}
+          <Typography
+            color="textPrimary"
+            display="inline"
+            variant="body1"
+          >
+            {/* {queryResults.data.documents[0].cv[0].text} */}
+            { queryResults && queryResults.data 
+              && JSON.stringify(queryResults.data.documents[0].cv[0].text
+                  .replaceAll('\n',' ')
+                  , 4).replace(/(^"|"$)/g, '')
+            }
+          </Typography>
         </CardContent>
       </Card>
     
