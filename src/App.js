@@ -8,6 +8,7 @@ import Button from "@material-ui/core/Button";
 // import ReactJson from 'react-json-view'; 
 import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from './utils/dcsApis';
+import { printBooks } from "./utils/printPreview";
 
 import {Proskomma} from 'proskomma';
 
@@ -41,6 +42,12 @@ export default function App(props) {
     actions.applyBooksFilter(supportedBooks);
   }, [actions, supportedBooks]);
 
+  const handlePrint = () => {
+    // console.log("handlePrint() not yet implemented!")
+    printBooks(importedBooks);
+  };
+
+
   /*
     State of bible reference includes:
     state: {
@@ -71,8 +78,9 @@ export default function App(props) {
         setContentStatus("Loading:"+state.bookId);
         const text = await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId);
         setContentStatus("Book Retrieved");
+        // note! not asynchronous
         pk.importDocument(
-          {lang: "eng", abbr: state.bookId},
+          {lang: "eng", abbr: state.bookId}, // selector. docSetId will be eng_{bookId}
           "usfm",
           text
         );
@@ -178,6 +186,10 @@ export default function App(props) {
 
           <Button variant="outlined" id="next_b" onClick={actions.goToNextBook}>
             {"Next Book"}
+          </Button>
+
+          <Button variant="outlined" id="print_b" onClick={handlePrint}>
+            {"Print Imported Books"}
           </Button>
         </CardActions>
       </Card>
