@@ -18,6 +18,7 @@
     "localforage": "^1.9.0",
     "lodash": "4.17.20",
     "proskomma": "0.4.6",
+    "proskomma-render-pdf": "0.6.8",
     "react": "17.0.0",
     "react-dom": "17.0.0",
     "react-json-view": "1.21.3",
