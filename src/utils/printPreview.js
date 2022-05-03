@@ -1,4 +1,4 @@
-// import { doRender } from "proskomma-render-pdf";
+import { doRender } from "proskomma-render-pdf";
 import {isNT} from '../common/BooksOfTheBible';
 
 export const SINGLE_BOOK_CONFIG = {
@@ -34,14 +34,14 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   let response = {};
   let docSetIds = [];
   let _structure = [];
-  let ntList = []
-  let otList = []
-  _structure.push("section");
+  let _books = [];
+  let ntList = [];
+  let otList = [];
   for (let i=0; i < books.length; i++) {
-    // first, create the docSetId
+    // first, create the docSetId and book sources
     const docSetId = language + "_"+ books[i].toUpperCase();
     docSetIds.push(docSetId);
-
+    _books.push( books[i].toUpperCase() );
     // second an entry for the array of bookcodes
     let entry = [];
     entry.push('bookCode');
@@ -56,10 +56,20 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   }
 
   // Next the ot/nt lists to the structure
-  _structure.push("nt");
-  _structure.push(ntList);
-  _structure.push("ot");
-  _structure.push(otList);
+  if ( ntList.length > 0 ) {
+    let section = []
+    section.push("section");
+    section.push("nt");
+    section.push(ntList);  
+    _structure.push(section);
+  }
+  if ( otList.length > 0 ) {
+    let section = []
+    section.push("section");
+    section.push("ot");
+    section.push(otList);  
+    _structure.push(section);
+  }
   console.log("finished structure is:", _structure);
   console.log("finished docSetIds is:", docSetIds)
 
@@ -76,6 +86,7 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
 
   const config = {
     ...SINGLE_BOOK_CONFIG,
+    bookSources: _books,
     title: SINGLE_BOOK_CONFIG.title,
     language,
     textDirection,
@@ -84,9 +95,13 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
     bookOutput: {}, //?
   };
 
-  // response = await doRender(proskomma, config, docSetIds);
-  return config;
-  // return response;
+  try {
+    console.log("Config:\n",config)
+    response = await doRender(proskomma, config, docSetIds);
+  } catch (err) {
+    console.log("render error:", err)
+  }
+  return response;
 }
 
 

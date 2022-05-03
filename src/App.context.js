@@ -1,5 +1,4 @@
 import React, { 
-  // useContext, 
   useEffect, 
   useState } from 'react';
 import PropTypes from 'prop-types';
@@ -24,7 +23,7 @@ export function AppContextProvider({
         textDirection: 'ltr',
         books: importedBooks,
       });
-      console.log("doRender config is:", html);
+      console.log("doRender html is:", html);
       // return to false
       setPrintPreview(false)
     }
