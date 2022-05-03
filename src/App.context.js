@@ -4,6 +4,7 @@ import React, {
   useState } from 'react';
 import PropTypes from 'prop-types';
 import {Proskomma} from 'proskomma';
+import { renderHTML } from './utils/printPreview';
 
 export const AppContext = React.createContext();
 
@@ -17,10 +18,20 @@ export function AppContextProvider({
   const [pk, /*setPk*/] = useState(new Proskomma());
 
   useEffect(() => {
-    if ( printPreview ) {
-      console.log("print preview was clicked");
+    const fetchHtml = async () => {
+      const html = await renderHTML({ proskomma: pk, 
+        language: 'en',
+        textDirection: 'ltr',
+        books: importedBooks,
+      });
+      console.log("doRender config is:", html);
       // return to false
       setPrintPreview(false)
+    }
+
+    if ( printPreview ) {
+      console.log("print preview was clicked");
+      fetchHtml();
     }
   }, [printPreview]);
 
