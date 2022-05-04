@@ -32,16 +32,16 @@ export const SINGLE_BOOK_CONFIG = {
 
 export async function renderHTML({ proskomma, language, textDirection, books }) {
   let response = {};
-  let docSetIds = [];
+  let docSetIds = ['eng_ult'];
   let _structure = [];
   let _books = [];
   let ntList = [];
   let otList = [];
   for (let i=0; i < books.length; i++) {
     // first, create the docSetId and book sources
-    const docSetId = language + "_"+ books[i].toUpperCase();
-    docSetIds.push(docSetId);
-    _books.push( books[i].toUpperCase() );
+    // const docSetId = language + "_"+ books[i].toUpperCase();
+    // docSetIds.push(docSetId);
+    // _books.push( books[i].toUpperCase() );
     // second an entry for the array of bookcodes
     let entry = [];
     entry.push('bookCode');
