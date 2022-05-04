@@ -1,5 +1,5 @@
 import { doRender } from "proskomma-render-pdf";
-import {isNT} from '../common/BooksOfTheBible';
+import {isNT, BIBLES_ABBRV_INDEX} from '../common/BooksOfTheBible';
 
 export const SINGLE_BOOK_CONFIG = {
   "title": "unfoldingWord Literal Translation",
@@ -37,6 +37,13 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   let _books = [];
   let ntList = [];
   let otList = [];
+  // sort the books array
+  books.sort( (a,b) => {
+    if ( BIBLES_ABBRV_INDEX[a] < BIBLES_ABBRV_INDEX[b] ) return -1;
+    if ( BIBLES_ABBRV_INDEX[a] > BIBLES_ABBRV_INDEX[b] ) return 1;
+    return 0;
+  })
+  console.log("sorted books:", books);
   for (let i=0; i < books.length; i++) {
     // first, create the docSetId and book sources
     // const docSetId = language + "_"+ books[i].toUpperCase();
@@ -56,18 +63,19 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   }
 
   // Next the ot/nt lists to the structure
-  if ( ntList.length > 0 ) {
-    let section = []
-    section.push("section");
-    section.push("nt");
-    section.push(ntList);  
-    _structure.push(section);
-  }
   if ( otList.length > 0 ) {
     let section = []
     section.push("section");
     section.push("ot");
     section.push(otList);  
+    _structure.push(section);
+  }
+
+  if ( ntList.length > 0 ) {
+    let section = []
+    section.push("section");
+    section.push("nt");
+    section.push(ntList);  
     _structure.push(section);
   }
 
@@ -83,6 +91,7 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   };
 
   try {
+    console.log("Render config, docSetIds:", config, docSetIds)
     response = await doRender(proskomma, config, docSetIds);
   } catch (err) {
     console.log("render error:", err)
