@@ -70,19 +70,6 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
     section.push(otList);  
     _structure.push(section);
   }
-  console.log("finished structure is:", _structure);
-  console.log("finished docSetIds is:", docSetIds)
-
-  // const docSetIds = [docSetId]
-  // const testamentIds = Object.keys(structure);
-  // const _structure = testamentIds.map((testamentId) => {
-  //   const testament = structure[testamentId];
-
-  //   const testamentBookCodes = testament.map((bookId) => (
-  //     ['bookCode', bookId.toUpperCase()]
-  //   ));
-  //   return ['section', testamentId, testamentBookCodes];
-  // }).filter(section => section[2].length > 0);
 
   const config = {
     ...SINGLE_BOOK_CONFIG,
@@ -96,7 +83,6 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   };
 
   try {
-    console.log("Config:\n",config)
     response = await doRender(proskomma, config, docSetIds);
   } catch (err) {
     console.log("render error:", err)
@@ -104,7 +90,3 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   return response;
 }
 
-
-export function printBooks(books) {
-    console.log("printBooks() input was:", books)
-}
