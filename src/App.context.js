@@ -19,7 +19,7 @@ export function AppContextProvider({
   useEffect(() => {
     const fetchHtml = async () => {
       const html = await renderHTML({ proskomma: pk, 
-        language: 'en',
+        language: 'eng',
         textDirection: 'ltr',
         books: importedBooks,
       });

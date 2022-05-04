@@ -88,7 +88,7 @@ export default function Demo(props) {
         setContentStatus("Book Retrieved");
         // note! not asynchronous
         pk.importDocument(
-          {lang: "eng", abbr: state.bookId}, // selector. docSetId will be eng_{bookId}
+          {lang: "eng", abbr: state.bookId.toUpperCase()}, // selector. docSetId will be eng_{bookId}
           "usfm",
           text
         );
