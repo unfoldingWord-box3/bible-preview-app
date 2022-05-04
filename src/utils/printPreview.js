@@ -34,7 +34,6 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
   let response = {};
   let docSetIds = ['eng_ult'];
   let _structure = [];
-  let _books = [];
   let ntList = [];
   let otList = [];
   // sort the books array
@@ -43,18 +42,11 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
     if ( BIBLES_ABBRV_INDEX[a] > BIBLES_ABBRV_INDEX[b] ) return 1;
     return 0;
   })
-  console.log("sorted books:", books);
   for (let i=0; i < books.length; i++) {
-    // first, create the docSetId and book sources
-    // const docSetId = language + "_"+ books[i].toUpperCase();
-    // docSetIds.push(docSetId);
-    // _books.push( books[i].toUpperCase() );
-    // second an entry for the array of bookcodes
     let entry = [];
     entry.push('bookCode');
     entry.push(books[i].toUpperCase());
     
-    // third add it to the ot or nt array
     if ( isNT(books[i]) ) {
       ntList.push( entry );
     } else {
@@ -81,7 +73,6 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
 
   const config = {
     ...SINGLE_BOOK_CONFIG,
-    bookSources: _books,
     title: SINGLE_BOOK_CONFIG.title,
     language,
     textDirection,
