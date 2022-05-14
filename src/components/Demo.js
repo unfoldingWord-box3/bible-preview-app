@@ -30,7 +30,7 @@ export default function Demo(props) {
 
   // deconstructed parameters
   const {
-    initialBook,
+    // initialBook,
     initialChapter,
     initialVerse,
     supportedBooks,
@@ -39,7 +39,7 @@ export default function Demo(props) {
   } = props || {};
 
   const { state, actions } = useBibleReference({
-    initialBook,
+    initialBook: "mat",
     initialChapter,
     initialVerse,
     onChange

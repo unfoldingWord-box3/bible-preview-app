@@ -34,7 +34,7 @@ export function AppContextProvider({
       console.log("print preview was clicked");
       fetchHtml();
     }
-  }, [printPreview]);
+  }, [printPreview, importedBooks, pk]);
 
   useEffect(() => {
     if ( html ) {
