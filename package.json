@@ -17,7 +17,7 @@
     "bible-reference-rcl": "0.1.8-alpha",
     "localforage": "^1.9.0",
     "lodash": "4.17.20",
-    "proskomma": "0.6.12",
+    "proskomma": "0.8.0",
     "proskomma-render-pdf": "0.6.8",
     "react": "17.0.0",
     "react-dom": "17.0.0",
