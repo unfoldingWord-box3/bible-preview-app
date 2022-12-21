@@ -9,22 +9,35 @@ import { AppContext } from '../App.context';
 
 import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from '../utils/dcsApis';
+import { renderHTML } from '../utils/printPreview';
+import {Proskomma} from 'proskomma';
+import { set } from "lodash";
 // import { printBooks } from "../utils/printPreview";
 
 export default function Demo(props) {
   // state variables
   const [contentStatus, setContentStatus] = useState("Waiting...");
-  const [queryResults, setQueryResults]   = useState("")
 
   // app context
   const {
     state: {
       importedBooks,
       pk,
+      owner,
+      repo,
+      branch,
+      language,
+      dir,
+      resource,
+      title,
+      textDirection,
+      html,
     },
     actions: {
       setImportedBooks,
       setPrintPreview,
+      setPk,
+      setHtml,
     }
   } = useContext(AppContext)
 
@@ -39,7 +52,7 @@ export default function Demo(props) {
   } = props || {};
 
   const { state, actions } = useBibleReference({
-    initialBook: "mat",
+    initialBook: window.location.href.split('/')[6] || "gen",
     initialChapter,
     initialVerse,
     onChange
@@ -50,10 +63,13 @@ export default function Demo(props) {
   }, [actions, supportedBooks]);
 
   const handlePrint = () => {
-    // console.log("handlePrint() not yet implemented!")
     setPrintPreview(true)
   };
 
+  const clearBooks = () => {
+    setImportedBooks([]);
+    setPk(new Proskomma());
+  }
 
   /*
     State of bible reference includes:
@@ -81,46 +97,44 @@ export default function Demo(props) {
     }`
 
     const fetchData = async () => {
+      if (! owner || ! repo || ! branch || ! title || ! textDirection)
+        return;
       if ( ! importedBooks.includes(state.bookId) ) {
         console.log("Book needs to be imported:", state.bookId)
         setContentStatus("Loading:"+state.bookId);
-        const text = await dcs.fetchBook('Door43-Catalog','en_ult',state.bookId);
+        const text = await dcs.fetchBook(owner, repo, branch, state.bookId);
         setContentStatus("Book Retrieved");
         // note! not asynchronous
-        pk.importDocument(
-          {lang: "eng", abbr: 'ult'}, // selector. docSetId will be eng_ult
-          "usfm",
-          text
-        );
-        setContentStatus("Imported into PK:"+state.bookId);
+        try {
+          pk.importDocument(
+            {lang: language, abbr: resource},
+            "usfm",
+            text
+          );
+          setContentStatus("Imported into PK: "+state.bookId);
+        } catch (e) {          
+        }
         let _importedBooks = importedBooks;
         _importedBooks.push(state.bookId);
         setImportedBooks(_importedBooks);
-      }
-      try {
-        let qresults = await pk.gqlQuery(gql);
-        console.log("query:", gql)
-        console.log("query results:", qresults);
-        //const data =JSON.parse(JSON.stringify(qresults));
-        let _data =JSON.parse(JSON.stringify(qresults));
-        _data = _data.data.documents[0]?.cv[0]?.text?.replaceAll('\n',' ')
-        let __data;
-        if ( _data ) {
-          __data = JSON.stringify(_data).replace(/(^"|"$)/g, '')
-          setQueryResults(__data);
-        }
-      } catch (err) {
-        console.log("pk.gqlQuery() Error:", err);
-        setQueryResults(err)
+
+        const html = await renderHTML({ proskomma: pk, 
+          language: language,
+          resource: resource,
+          title: title,
+          textDirection: textDirection,
+          books: _importedBooks,
+        });
+        // console.log("doRender html is:", html); // the object has some interesting stuff in it
+        setHtml(html.output);  
       }
     }
-
 
     if ( state.bookId ) {
         fetchData();
     }
 
-  }, [pk, state.bookId, state.chapter, state.verse, importedBooks, setImportedBooks]);
+  }, [pk, owner, repo, branch, title, textDirection, state.bookId, importedBooks, setImportedBooks]);
 
   return (
     <div>
@@ -158,42 +172,8 @@ export default function Demo(props) {
           >
             {`${state.bookName}`}
           </Typography>
-          <br />
-          <Typography
-            style={{ marginLeft: "50px" }}
-            color="textPrimary"
-            gutterBottom
-            display="inline"
-          >
-            {`Current Location:\u00A0`}
-          </Typography>
-          <Typography
-            style={{ fontWeight: "bold" }}
-            color="textPrimary"
-            gutterBottom
-            display="inline"
-          >
-            {`${state.bookId} ${state.chapter}:${state.verse}`}
-          </Typography>
         </CardContent>
         <CardActions>
-
-          <Button
-            variant="outlined"
-            id="prev_v"
-            onClick={actions.goToPrevVerse}
-          >
-            {"Previous Verse"}
-          </Button>
-
-          <Button
-            variant="outlined"
-            id="next_v"
-            onClick={actions.goToNextVerse}
-          >
-            {"Next Verse"}
-          </Button>
-
           <Button variant="outlined" id="prev_b" onClick={actions.goToPrevBook}>
             {"Previous Book"}
           </Button>
@@ -202,8 +182,12 @@ export default function Demo(props) {
             {"Next Book"}
           </Button>
 
+          <Button variant="outlined" id="prev_b" onClick={clearBooks}>
+            {"Clear Books"}
+          </Button>
+
           <Button variant="outlined" id="print_b" onClick={handlePrint}>
-            {"Print Imported Books"}
+            {"Print Preview"}
           </Button>
         </CardActions>
       </Card>
@@ -233,14 +217,13 @@ export default function Demo(props) {
     
       <Card variant="outlined">
         <CardContent>
-          {/* <ReactJson src={queryResults} /> */}
+          {/* <ReactJson src={html} /> */}
           <Typography
             color="textPrimary"
             display="inline"
             variant="body1"
           >
-            {/* {queryResults.data.documents[0].cv[0].text} */}
-            {queryResults}
+            <div dangerouslySetInnerHTML={{ __html: html }}></div>
           </Typography>
         </CardContent>
       </Card>
@@ -248,37 +231,3 @@ export default function Demo(props) {
     </div>
   );
 }
-
-
-/* example query
-cv (chapter:"3" verses:["6"]) { scopeLabels, items { type subType payload } tokens { subType payload } text }
-<ReactJson src={my_json_object} />
-{
-    processor
-    packageVersion
-    documents {
-        mainSequence {
-            blocks(withScopes:["chapter/1", "verse/1"]) {
-              text(normalizeSpace: true)
-            }
-        }
-    }
-}
-
-    const bookParameter    = `${state.bookId}`.toUpperCase()
-    const chapterParameter = `chapter/${state.chapter}`
-    const verseParameter   = `verse/${state.verse}`
-
-    const gql = `{
-      processor
-      packageVersion
-      documents(withBook: "${bookParameter}") {
-          mainSequence {
-              blocks(withScopes:["${chapterParameter}", "${verseParameter}"]) {
-                text(normalizeSpace: true)
-              }
-          }
-      }
-    }`
-
-*/

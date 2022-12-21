@@ -30,9 +30,9 @@ export const SINGLE_BOOK_CONFIG = {
   }
 };
 
-export async function renderHTML({ proskomma, language, textDirection, books }) {
+export async function renderHTML({ proskomma, language, resource, title, textDirection, books }) {
   let response = {};
-  let docSetIds = ['eng_ult'];
+  let docSetIds = [language+'_'+resource];
   let _structure = [];
   let ntList = [];
   let otList = [];
@@ -73,11 +73,15 @@ export async function renderHTML({ proskomma, language, textDirection, books }) 
 
   const config = {
     ...SINGLE_BOOK_CONFIG,
-    title: SINGLE_BOOK_CONFIG.title,
+    title,
+    uid: resource.toUpperCase(),
     language,
     textDirection,
     structure: _structure,
-    i18n: SINGLE_BOOK_CONFIG.i18n,
+    i18n: {
+      ...SINGLE_BOOK_CONFIG.i18n,
+      titlePage: title,
+    },
     bookOutput: {}, //?
   };
 

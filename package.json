@@ -1,11 +1,11 @@
 {
-  "name": "bible-ref-pk-demo",
-  "version": "1.0.0",
+  "name": "bible-preview-app",
+  "version": "0.1.0",
   "description": "",
-  "homepage": "https://mandolyte.github.io/bible-ref-pk-demo/",
+  "homepage": "https://bible-preview-app.netlify.app",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mandolyte/bible-ref-pk-demo"
+    "url": "https://github.com/unfoldingWord-box3/bible-preview-app"
   },
   "keywords": [],
   "dependencies": {

@@ -1,4 +1,5 @@
-//import Path from 'path';
+import Path from 'path';
+import yaml from 'yaml';
 import localforage from 'localforage';
 import { setup } from 'axios-cache-adapter';
 //import _ from "lodash";
@@ -32,11 +33,11 @@ const Door43Api = setup({
 
 
 
-export async function fetchBook(username, repository, bookid) {
+export async function fetchBook(username, repository, branch, bookid) {
   //https://qa.door43.org/Door43-Catalog/en_ult/raw/branch/master/57-TIT.usfm
   const usfmid = books.usfmNumberName(bookid)+'.usfm';
   //const uri = Path.join(base_url,apiPath,username,repository,'raw','branch','master', usfmid);
-  const uri = base_url+'/'+username+'/'+repository+'/raw/branch/master/'+usfmid;
+  const uri = base_url+'/'+username+'/'+repository+'/raw/branch/'+branch+'/'+usfmid;
   console.log("uri=", uri);
   let results;
   try {
@@ -67,24 +68,20 @@ export async function repoExists(username, repository, tokenid) {
   } 
   return repoExistsFlag;
 }
+*/
 
-export async function manifestExists(username, repository, tokenid) {
+export async function getManifest(username, repository, branch) {
 
   // example: https://qa.door43.org/api/v1/repos/translate_test/en_ta/raw/manifest.yaml
   //          https://qa.door43.org/translate_test/en_ta/raw/branch/master/manifest.yaml
-  const uri = Path.join(username,repository,'raw','branch/master/manifest.yaml');
-  let manifestInfo = {status: false, valid: false, format: 'UNKNOWN'}
+  const uri = Path.join(username, repository, 'raw', 'branch', branch, 'manifest.yaml');
   try {
-    const { data } = await Door43Api.get(uri+'?token='+tokenid, {});
+    const { data } = await Door43Api.get(uri, {});
  
     if ( data ) {
       // success
-      manifestInfo.status = true;
-      const manifestContents = data;
       try {
-        let manifestJson = yaml.parse(manifestContents);
-        manifestInfo.valid = true;
-        if ( manifestJson.dublin_core.format ) manifestInfo.format = manifestJson.dublin_core.format;
+        return yaml.parse(data);
       }
       catch (yamlError) {
         console.error(`${username} ${repository} manifest yaml parse error: ${yamlError.message}`);
@@ -93,9 +90,10 @@ export async function manifestExists(username, repository, tokenid) {
   } catch (geterror) {
     //console.error("Error:",geterror,"on:",uri);
   }
-  return manifestInfo;
+  return {};
 }
 
+/*
 export async function repoCreate({username, repository, tokenid}) {
   const uri = Path.join(base_url,apiPath,'orgs',username,'repos') ;
   const res = await fetch(uri+'?token='+tokenid, {

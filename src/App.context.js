@@ -3,7 +3,8 @@ import React, {
   useState } from 'react';
 import PropTypes from 'prop-types';
 import {Proskomma} from 'proskomma';
-import { renderHTML } from './utils/printPreview';
+import { getManifest } from './utils/dcsApis';
+import { setDriver } from 'localforage';
 
 export const AppContext = React.createContext();
 
@@ -14,30 +15,69 @@ export function AppContextProvider({
 
   const [printPreview, setPrintPreview] = useState(false)
   const [importedBooks, setImportedBooks] = useState([]);
-  const [pk, /*setPk*/] = useState(new Proskomma());
+  const [pk, setPk] = useState(new Proskomma());
   const [html, setHtml] = useState(null);
+  const [owner, setOwner] = useState("");
+  const [repo, setRepo] = useState("");
+  const [branch, setBranch] = useState("");
+  const [language, setLanguage] = useState("");
+  const [textDirection, setTextDirection] = useState("ltr");
+  const [resource, setResource] = useState("");
+  const [title, setTitle] = useState("");
 
   useEffect(() => {
-    const fetchHtml = async () => {
-      const html = await renderHTML({ proskomma: pk, 
-        language: 'eng',
-        textDirection: 'ltr',
-        books: importedBooks,
-      });
-      // console.log("doRender html is:", html); // the object has some interesting stuff in it
-      setHtml(html.output);
-      // return to false
-      setPrintPreview(false)
+    const urlParts = window.location.href.split('/');
+    
+    if (urlParts[3])
+      setOwner(urlParts[3]);
+    else
+      setOwner("unfoldingWord");
+    
+    if (urlParts[4]) {
+      setRepo(urlParts[4]);
+      const [my_lang, my_resource] = urlParts[4].split('_');
+      if (my_lang) {
+        if (my_lang == "en") {
+          setLanguage("eng");
+        }
+        else {
+          setLanguage(my_lang);
+        }
+      } else {
+        setLanguage("eng");
+      }
+      if (my_resource)
+        setResource(my_resource);
+      else
+        setResource(urlParts[4]);
     }
-
-    if ( printPreview ) {
-      console.log("print preview was clicked");
-      fetchHtml();
+    else {
+      setRepo("en_ult");
+      setLanguage("eng");
+      setResource("ult");
     }
-  }, [printPreview, importedBooks, pk]);
+    
+    if (urlParts[5])
+      setBranch(urlParts[5]);
+    else
+      setBranch("master");
+  }, window.location.href);
 
   useEffect(() => {
-    if ( html ) {
+    const fetchManifest = async () => {
+      const manifest = await getManifest(owner, repo, branch);
+      if (manifest) {
+        setTitle(manifest.dublin_core.title);
+        setTextDirection(manifest.dublin_core.language.direction)
+      }
+    };
+    if (owner && repo && branch) {
+      fetchManifest()
+    }
+  }, [owner, repo, branch]);
+
+  useEffect(() => {
+    if ( printPreview && html ) {
       console.log("html data is available")
       const newPage = window.open('','','_window');
       newPage.document.head.innerHTML = "<title>PDF Preview</title>";
@@ -68,12 +108,10 @@ export function AppContextProvider({
       `;
       style.innerHTML = newStyles + html.replace(/^[\s\S]*<style>/, "").replace(/<\/style>[\s\S]*/, "");
       newPage.document.head.appendChild(style);
-      newPage.document.body.innerHTML = html.replace(/^[\s\S]*<body>/, "").replace(/<\/body>[\s\S]*/, "");      
-      setHtml(null);
+      newPage.document.body.innerHTML = html.replace(/^[\s\S]*<body>/, "").replace(/<\/body>[\s\S]*/, "");
+      setPrintPreview(false);
     }
-  }, [html])
-
-
+  }, [printPreview, html])
 
   // create the value for the context provider
   const context = {
@@ -81,10 +119,20 @@ export function AppContextProvider({
       importedBooks,
       printPreview,
       pk,
+      owner,
+      repo,
+      branch,
+      language,
+      resource,
+      title,
+      textDirection,
+      html,
     },
     actions: {
       setImportedBooks,
       setPrintPreview,
+      setPk,
+      setHtml,
     },
   };
 
@@ -102,4 +150,3 @@ AppContextProvider.propTypes = {
     PropTypes.node,
   ]).isRequired,
 };
-
