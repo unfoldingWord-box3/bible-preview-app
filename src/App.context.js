@@ -60,7 +60,7 @@ export function AppContextProvider({
       setBranch(urlParts[5]);
     else
       setBranch("master");
-  }, [window.location.href]);
+  }, []);
 
   useEffect(() => {
     const fetchManifest = async () => {
