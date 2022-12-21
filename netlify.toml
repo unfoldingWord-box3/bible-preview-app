@@ -1,0 +1,7 @@
+[[redirects]]
+  from = "/*"
+  to = "/dashboard"
+  status = 200
+  force = false
+  query = {path = ":path"}
+
