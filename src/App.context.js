@@ -4,7 +4,6 @@ import React, {
 import PropTypes from 'prop-types';
 import {Proskomma} from 'proskomma';
 import { getManifest } from './utils/dcsApis';
-import { setDriver } from 'localforage';
 
 export const AppContext = React.createContext();
 
@@ -37,7 +36,7 @@ export function AppContextProvider({
       setRepo(urlParts[4]);
       const [my_lang, my_resource] = urlParts[4].split('_');
       if (my_lang) {
-        if (my_lang == "en") {
+        if (my_lang === "en") {
           setLanguage("eng");
         }
         else {
@@ -61,7 +60,7 @@ export function AppContextProvider({
       setBranch(urlParts[5]);
     else
       setBranch("master");
-  }, window.location.href);
+  }, [window.location.href]);
 
   useEffect(() => {
     const fetchManifest = async () => {

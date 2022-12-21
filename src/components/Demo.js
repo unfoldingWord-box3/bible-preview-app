@@ -11,7 +11,6 @@ import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from '../utils/dcsApis';
 import { renderHTML } from '../utils/printPreview';
 import {Proskomma} from 'proskomma';
-import { set } from "lodash";
 // import { printBooks } from "../utils/printPreview";
 
 export default function Demo(props) {
@@ -27,7 +26,6 @@ export default function Demo(props) {
       repo,
       branch,
       language,
-      dir,
       resource,
       title,
       textDirection,
@@ -84,18 +82,6 @@ export default function Demo(props) {
  *    },
   */
   useEffect(() => {
-    const bookParameter    = `${state.bookId}`.toUpperCase()
-    const chapterParameter = `${state.chapter}`
-    const verseParameter   = `${state.verse}`
-    const gql = `{
-      processor
-      packageVersion
-      documents(withBook: "${bookParameter}") {
-        cv (chapter:"${chapterParameter}" verses:["${verseParameter}"]) 
-          { text }
-      }
-    }`
-
     const fetchData = async () => {
       if (! owner || ! repo || ! branch || ! title || ! textDirection)
         return;
@@ -134,7 +120,7 @@ export default function Demo(props) {
         fetchData();
     }
 
-  }, [pk, owner, repo, branch, title, textDirection, state.bookId, importedBooks, setImportedBooks]);
+  }, [pk, owner, repo, branch, title, language, resource, textDirection, state.bookId, state.chapter, state.verse, importedBooks, setImportedBooks, setHtml]);
 
   return (
     <div>
