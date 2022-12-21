@@ -1,3 +1,4 @@
 [[redirects]]
-  from = "/*"
+  from = "/news"
   to = "/"
+	status = "200"
