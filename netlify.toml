@@ -6,8 +6,5 @@
   query = {path = ":path"}
 
 [build]
-  command = "npm run build"
-  publish = "out"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+  command = "yarn build"
+  publish = "build"
