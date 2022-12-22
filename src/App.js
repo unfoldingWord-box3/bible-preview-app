@@ -36,11 +36,11 @@ export default function App(props) {
         const manifest = await fetchTCManifest(owner, repo, branchOrTag);
         console.log("TC", manifest);
         if (manifest) {
-          title = manifest.source_translations[0].resource_id.toUpperCase();
+          title = manifest.resource.id.toUpperCase();
           language = manifest.target_language.id;
           textDirection = manifest.target_language.direction;
           supportedBooks = [manifest.project.id];
-          resource = manifest.source_translations[0].resource_id;
+          resource = manifest.resource.id;
         }
       } else {
         console.log("Fetching RC manifest: ", owner, repo, branchOrTag);
