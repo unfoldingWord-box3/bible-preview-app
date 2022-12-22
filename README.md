@@ -1,8 +1,10 @@
-# bible-ref-pk-demo
-Use of Bible Ref Component with Proskomma
+# bible-preview-app
 
+A uW (DCS) Bible preview app
 
-View Github Pages: https://mandolyte.github.io/bible-ref-pk-demo/
+View the App: https://bible-preview-app.netlify.app
+
+# The Below comes from https://github.com/mandolyte/bible-ref-pk-demo (to be changed/updated)
 
 ## Observations
 

@@ -11,48 +11,49 @@ import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from '../utils/dcsApis';
 import { renderHTML } from '../utils/printPreview';
 import {Proskomma} from 'proskomma';
-// import { printBooks } from "../utils/printPreview";
 
-export default function Demo(props) {
+export default function AlignedBible(props) {
   // state variables
   const [contentStatus, setContentStatus] = useState("Waiting...");
+  const [booksToImport, setBooksToImport] = useState([])
+  const [importedBooks, setImportedBooks] = useState([]);
+  const [pk, setPk] = useState(new Proskomma());
+  const [loadingBooks, setLoadingBooks] = useState(false);
 
   // app context
   const {
     state: {
-      importedBooks,
-      pk,
-      owner,
-      repo,
-      branch,
-      language,
-      resource,
-      title,
-      textDirection,
       html,
     },
     actions: {
-      setImportedBooks,
       setPrintPreview,
-      setPk,
       setHtml,
     }
   } = useContext(AppContext)
 
   // deconstructed parameters
   const {
-    // initialBook,
+    initialBook,
     initialChapter,
     initialVerse,
+    owner,
+    repo,
+    branchOrTag,
+    language,
+    textDirection,
+    isTcRepo,
+    resource,
+    title,
     supportedBooks,
     onChange,
     style
   } = props || {};
 
   const { state, actions } = useBibleReference({
-    initialBook: window.location.href.split('/')[6] || "gen",
+    initialBook,
     initialChapter,
     initialVerse,
+    supportedBooks,
     onChange
   });
 
@@ -64,10 +65,27 @@ export default function Demo(props) {
     setPrintPreview(true)
   };
 
-  const clearBooks = () => {
+  const handleLoadAll = () => {
+    const books = [];
+    console.log(supportedBooks);
+    supportedBooks.forEach(bookId => {
+      if (! importedBooks.includes(bookId))
+        books.push(bookId);
+    })
+    setBooksToImport(books);
+  };
+
+  const handleClearBooks = () => {
     setImportedBooks([]);
     setPk(new Proskomma());
   }
+
+  useEffect(() => {
+    if (! booksToImport.includes(state.bookId) && ! importedBooks.includes(state.bookId)) {
+      setBooksToImport([...booksToImport, ...[state.bookId]]);
+      console.log("NOW BOOKS TO IMPORT: ", [booksToImport, ...[state.bookId]]);
+    }
+  }, [state.bookId, booksToImport, importedBooks, setBooksToImport]);
 
   /*
     State of bible reference includes:
@@ -82,45 +100,62 @@ export default function Demo(props) {
  *    },
   */
   useEffect(() => {
-    const fetchData = async () => {
-      if (! owner || ! repo || ! branch || ! title || ! textDirection)
-        return;
-      if ( ! importedBooks.includes(state.bookId) ) {
-        console.log("Book needs to be imported:", state.bookId)
-        setContentStatus("Loading:"+state.bookId);
-        const text = await dcs.fetchBook(owner, repo, branch, state.bookId);
-        setContentStatus("Book Retrieved");
-        // note! not asynchronous
-        try {
-          pk.importDocument(
-            {lang: language, abbr: resource},
-            "usfm",
-            text
-          );
-          setContentStatus("Imported into PK: "+state.bookId);
-        } catch (e) {          
-        }
-        let _importedBooks = importedBooks;
-        _importedBooks.push(state.bookId);
-        setImportedBooks(_importedBooks);
+    console.log("Start of effect to fetchData:", booksToImport, loadingBooks);
+    if (! booksToImport.length || loadingBooks)
+      return false;
 
+    setLoadingBooks(true);
+    console.log("FIRST IMPORTED BOOKS:", importedBooks);
+    console.log("BOOKS:", booksToImport)
+
+    const fetchData = async () => {
+      let dirty = false;
+      console.log("fetchData importedBooks:", importedBooks);
+      console.log("fetchData books:", booksToImport);
+      for(let i = 0; i < booksToImport.length; i++) {
+        const bookId = booksToImport[i];
+        console.log(bookId);
+        if ( ! importedBooks.includes(bookId) ) {
+          console.log("Book needs to be imported:", bookId)
+          setContentStatus("Loading: "+bookId);
+          const text = await dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo);
+          setContentStatus("Book Retrieved");
+          // note! not asynchronous
+          try {
+            pk.importDocument(
+              {lang: (language === "en" ? "eng" : language), abbr: resource},
+              "usfm",
+              text
+            );
+            setContentStatus("Imported into PK: " + bookId);
+            console.log("Imported into PK: " + bookId);
+            importedBooks.push(bookId);
+            setImportedBooks(importedBooks);
+            dirty = true;
+          } catch (e) {  
+            console.log("ERROR pk.importDoument: ", e);
+          }
+        }
+      }
+
+      if (dirty) {
+        console.log("RENDERING HTML NOW!!!");
         const html = await renderHTML({ proskomma: pk, 
-          language: language,
+          language: (language === "en" ? "eng" : language),
           resource: resource,
           title: title,
           textDirection: textDirection,
-          books: _importedBooks,
+          books: importedBooks,
         });
         // console.log("doRender html is:", html); // the object has some interesting stuff in it
-        setHtml(html.output);  
+        setHtml(html.output);
       }
+      setBooksToImport([]);
+      setLoadingBooks(false);
     }
 
-    if ( state.bookId ) {
-        fetchData();
-    }
-
-  }, [pk, owner, repo, branch, title, language, resource, textDirection, state.bookId, state.chapter, state.verse, importedBooks, setImportedBooks, setHtml]);
+    fetchData();
+  }, [pk, importedBooks, booksToImport, isTcRepo, language, owner, branchOrTag, repo, resource, textDirection, title, loadingBooks, setLoadingBooks, setImportedBooks, setBooksToImport, setHtml]);
 
   return (
     <div>
@@ -141,22 +176,13 @@ export default function Demo(props) {
       <br />
 
       <Card variant="outlined">
-        <CardContent>
+      <CardContent>
           <Typography
-            style={{ marginLeft: "50px" }}
             color="textPrimary"
             gutterBottom
             display="inline"
           >
-            {`Book Name:\u00A0`}
-          </Typography>
-          <Typography
-            style={{ fontWeight: "bold" }}
-            color="textPrimary"
-            gutterBottom
-            display="inline"
-          >
-            {`${state.bookName}`}
+            {`Owner:\u00A0`}{owner}{", Repo:\u00A0"}{repo}{", Branch/Tag:\u00A0"}{branchOrTag}
           </Typography>
         </CardContent>
         <CardActions>
@@ -168,7 +194,11 @@ export default function Demo(props) {
             {"Next Book"}
           </Button>
 
-          <Button variant="outlined" id="prev_b" onClick={clearBooks}>
+          <Button variant="outlined" id="load_all" onClick={handleLoadAll}>
+            {"Load All Books"}
+          </Button>
+
+          <Button variant="outlined" id="clear_b" onClick={handleClearBooks}>
             {"Clear Books"}
           </Button>
 
@@ -195,7 +225,7 @@ export default function Demo(props) {
             color="textPrimary"
             display="inline"
           >
-            Imported Books are: {importedBooks.join(", ")}
+            {(importedBooks.length ? `Imported Books are: ${importedBooks.join(", ")}` : "No books imported yet")}
           </Typography>
         </CardContent>
       </Card>

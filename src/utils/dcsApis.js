@@ -14,7 +14,6 @@ const cacheStore = localforage.createInstance({
   name: 'web-cache',
 });
 
-
 // API for http requests
 const Door43Api = setup({
   baseURL: baseURL,
@@ -33,11 +32,14 @@ const Door43Api = setup({
 
 
 
-export async function fetchBook(username, repository, branch, bookid) {
+export async function fetchBook(username, repository, branch, bookid, isTcRepo) {
   //https://qa.door43.org/Door43-Catalog/en_ult/raw/branch/master/57-TIT.usfm
-  const usfmid = books.usfmNumberName(bookid)+'.usfm';
+  let usfmFile = books.usfmNumberName(bookid)+'.usfm';
+  if (isTcRepo) {
+    usfmFile = `${repository}.usfm`;
+  }
   //const uri = Path.join(base_url,apiPath,username,repository,'raw','branch','master', usfmid);
-  const uri = base_url+'/'+username+'/'+repository+'/raw/branch/'+branch+'/'+usfmid;
+  const uri = base_url+'/'+username+'/'+repository+'/raw/branch/'+branch+'/'+usfmFile;
   console.log("uri=", uri);
   let results;
   try {
@@ -70,14 +72,15 @@ export async function repoExists(username, repository, tokenid) {
 }
 */
 
-export async function getManifest(username, repository, branch) {
+export async function fetchManifest(username, repository, branch) {
 
   // example: https://qa.door43.org/api/v1/repos/translate_test/en_ta/raw/manifest.yaml
   //          https://qa.door43.org/translate_test/en_ta/raw/branch/master/manifest.yaml
   const uri = Path.join(username, repository, 'raw', 'branch', branch, 'manifest.yaml');
+  console.log("URI: ", uri);
   try {
     const { data } = await Door43Api.get(uri, {});
- 
+    console.log("DATA: ", data);
     if ( data ) {
       // success
       try {
@@ -88,9 +91,27 @@ export async function getManifest(username, repository, branch) {
       }
     } 
   } catch (geterror) {
-    //console.error("Error:",geterror,"on:",uri);
+    console.error("Error:",geterror,"on:",uri);
   }
-  return {};
+  return null;
+}
+
+export async function fetchTCManifest(username, repository, ref) {
+
+  // example: https://qa.door43.org/api/v1/repos/translate_test/en_ta/raw/manifest.yaml
+  //          https://qa.door43.org/translate_test/en_ta/raw/branch/master/manifest.yaml
+  const uri = Path.join(username, repository, 'raw', 'branch', ref, 'manifest.json');
+  try {
+    const { data } = await Door43Api.get(uri, {});
+    if ( data ) {
+      // success
+      console.log(data);
+      return data;
+    } 
+  } catch (geterror) {
+    console.error("Error:",geterror,"on:",uri);
+  }
+  return null;
 }
 
 /*
