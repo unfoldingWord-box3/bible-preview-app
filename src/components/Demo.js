@@ -196,7 +196,7 @@ export default function Demo(props) {
             display="inline"
           >
             Imported Books are: 
-            {importedBooks.join()}
+            {importedBooks.join(", ")}
           </Typography>
         </CardContent>
       </Card>
