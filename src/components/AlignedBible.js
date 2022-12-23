@@ -190,7 +190,7 @@ export default function AlignedBible(props) {
             gutterBottom
             display="inline"
           >
-            {`Owner:\u00A0`}{owner}{", Repo:\u00A0"}{repo}{", Branch/Tag:\u00A0"}{branchOrTag}
+            {`Owner:\u00A0`}{owner}{", Repo:\u00A0"}{repo}{", Branch/Tag:\u00A0"}{branchOrTag} <a href={`https://git.door43.org/${owner}/${repo}/src/branch/${branchOrTag}`} target={"_blank"} rel={"noopener noreferrer"}>{"See on DCS"}</a>
           </Typography>
         </CardContent>
         <CardActions>
