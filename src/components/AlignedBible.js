@@ -11,6 +11,8 @@ import BibleReference, { useBibleReference } from "bible-reference-rcl";
 import * as dcs from '../utils/dcsApis';
 import { renderHTML } from '../utils/printPreview';
 import {Proskomma} from 'proskomma';
+import {clearCaches, getFileCached} from '../utils/zipUtils'
+import * as books from '../common/books';
 
 export default function AlignedBible(props) {
   // state variables
@@ -76,6 +78,7 @@ export default function AlignedBible(props) {
   };
 
   const handleClearBooks = () => {
+    clearCaches();
     setImportedBooks([]);
     setPk(new Proskomma());
   }
@@ -116,9 +119,14 @@ export default function AlignedBible(props) {
         const bookId = booksToImport[i];
         console.log(bookId);
         if ( ! importedBooks.includes(bookId) ) {
-          console.log("Book needs to be imported:", bookId)
+          console.log("Book needs to be imported:", bookId);
           setContentStatus("Loading: "+bookId);
-          const text = await dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo);
+          let filename;
+          if (isTcRepo)
+            filename = repo+'.usfm';            
+          else
+            filename = books.usfmNumberName(bookId)+'.usfm';
+          const text = await getFileCached({username: owner, repository: repo, path: filename, branch: branchOrTag}); // dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo)
           setContentStatus("Book Retrieved");
           // note! not asynchronous
           try {
