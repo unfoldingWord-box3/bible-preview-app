@@ -123,8 +123,9 @@ export default function AlignedBible(props) {
             "usfm",
             text
           );
-          setContentStatus("Imported into PK: " + bookId);
-          console.log("Imported into PK: " + bookId);
+          const status = "Imported into PK: " + bookId + (booksToImport.length===1?"; Rendering HTML...":"");
+          setContentStatus(status);
+          console.log(status);
           setImportedBooks([...importedBooks, bookId]);
         } catch (e) {
           console.log("ERROR pk.importDoument: ", e);
@@ -156,8 +157,6 @@ export default function AlignedBible(props) {
 
     console.log("HERE IN EFFECT HTML: ", booksToImport, importedBooks);
     if (!booksToImport.length && importedBooks.length) {
-      console.log("RENDERING HTML NOW!!!");
-      setContentStatus("Rendering HTML...");
       handleHTML();
     }
   }, [booksToImport, importedBooks, pk, resource, title, language, textDirection, setHtml]);
