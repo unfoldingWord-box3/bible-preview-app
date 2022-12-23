@@ -10,8 +10,8 @@ import { AppContext } from '../App.context';
 import BibleReference, { useBibleReference } from "bible-reference-rcl";
 // import * as dcs from '../utils/dcsApis';
 import { renderHTML } from '../utils/printPreview';
-import {Proskomma} from 'proskomma';
-import {clearCaches, getFileCached} from '../utils/zipUtils'
+import { Proskomma } from 'proskomma';
+import { clearCaches, getFileCached } from '../utils/zipUtils'
 import * as books from '../common/books';
 
 export default function AlignedBible(props) {
@@ -20,7 +20,6 @@ export default function AlignedBible(props) {
   const [booksToImport, setBooksToImport] = useState([])
   const [importedBooks, setImportedBooks] = useState([]);
   const [pk, setPk] = useState(new Proskomma());
-  const [loadingBooks, setLoadingBooks] = useState(false);
 
   // app context
   const {
@@ -73,7 +72,7 @@ export default function AlignedBible(props) {
     const books = [];
     console.log(supportedBooks);
     supportedBooks.forEach(bookId => {
-      if (! importedBooks.includes(bookId))
+      if (!importedBooks.includes(bookId))
         books.push(bookId);
     })
     setBooksToImport(books);
@@ -86,8 +85,8 @@ export default function AlignedBible(props) {
   }
 
   useEffect(() => {
-    if (! booksToImport.includes(state.bookId) && ! importedBooks.includes(state.bookId)) {
-      setBooksToImport([...booksToImport, ...[state.bookId]]);
+    if (!booksToImport.includes(state.bookId) && !importedBooks.includes(state.bookId)) {
+      setBooksToImport([...booksToImport, state.bookId]);
     }
   }, [state.bookId, booksToImport, importedBooks, setBooksToImport]);
 
@@ -104,63 +103,64 @@ export default function AlignedBible(props) {
  *    },
   */
   useEffect(() => {
-    if (! booksToImport.length || loadingBooks)
-      return false;
-    setLoadingBooks(true);
-
     const fetchData = async () => {
-      let dirty = false;
-      console.log("fetchData importedBooks:", importedBooks);
-      console.log("fetchData books:", booksToImport);
-      for(let i = 0; i < booksToImport.length; i++) {
-        const bookId = booksToImport[i];
-        if ( ! importedBooks.includes(bookId) ) {
-          setContentStatus("Loading: "+bookId);
-          console.log("Loading: "+bookId);
-          let filename;
-          if (isTcRepo)
-            filename = repo+'.usfm';            
-          else
-            filename = books.usfmNumberName(bookId)+'.usfm';
-          const text = await getFileCached({username: owner, repository: repo, path: filename, branch: commitID}); // dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo)
-          setContentStatus("Book Retrieved: "+bookId);
-          console.log("Book Retrieved: "+bookId);
-          // note! not asynchronous
-          try {
-            pk.importDocument(
-              {lang: (language === "en" ? "eng" : language), abbr: resource},
-              "usfm",
-              text
-            );
-            setContentStatus("Imported into PK: " + bookId);
-            console.log("Imported into PK: " + bookId);
-            importedBooks.push(bookId);
-            setImportedBooks(importedBooks);
-            dirty = true;
-          } catch (e) {  
-            console.log("ERROR pk.importDoument: ", e);
-          }
+      const bookId = booksToImport[0];
+      if (!importedBooks.includes(bookId)) {
+        setContentStatus("Loading: " + bookId);
+        console.log("Loading: " + bookId);
+        let filename;
+        if (isTcRepo)
+          filename = repo + '.usfm';
+        else
+          filename = books.usfmNumberName(bookId) + '.usfm';
+        const text = await getFileCached({ username: owner, repository: repo, path: filename, branch: commitID }); // dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo)
+        setContentStatus("Book Retrieved: " + bookId);
+        console.log("Book Retrieved: " + bookId);
+        // note! not asynchronous
+        try {
+          pk.importDocument(
+            { lang: (language === "en" ? "eng" : language), abbr: resource },
+            "usfm",
+            text
+          );
+          setContentStatus("Imported into PK: " + bookId);
+          console.log("Imported into PK: " + bookId);
+          setImportedBooks([...importedBooks, bookId]);
+        } catch (e) {
+          console.log("ERROR pk.importDoument: ", e);
         }
       }
 
-      if (dirty) {
-        console.log("RENDERING HTML NOW!!!");
-        const html = await renderHTML({ proskomma: pk, 
-          language: (language === "en" ? "eng" : language),
-          resource: resource,
-          title: title,
-          textDirection: textDirection,
-          books: importedBooks,
-        });
-        console.log("doRender html is:", html.output); // the object has some interesting stuff in it
-        setHtml(html.output);
-      }
-      setBooksToImport([]);
-      setLoadingBooks(false);
+      setBooksToImport(booksToImport.slice(1));
     }
 
-    fetchData();
-  }, [pk, importedBooks, booksToImport, isTcRepo, language, owner, commitID, repo, resource, textDirection, title, loadingBooks, setLoadingBooks, setImportedBooks, setBooksToImport, setHtml]);
+    if (booksToImport.length) {
+      fetchData();
+    }
+  }, [pk, importedBooks, booksToImport, isTcRepo, language, owner, commitID, repo, resource, setImportedBooks, setBooksToImport]);
+
+  useEffect(() => {
+    const handleHTML = async () => {
+      const html = await renderHTML({
+        proskomma: pk,
+        language: (language === "en" ? "eng" : language),
+        resource: resource,
+        title: title,
+        textDirection: textDirection,
+        books: importedBooks,
+      });
+      console.log("doRender html is:", html.output); // the object has some interesting stuff in it
+      setHtml(html.output);
+      setContentStatus("Rendered HTML");
+    };
+
+    console.log("HERE IN EFFECT HTML: ", booksToImport, importedBooks);
+    if (!booksToImport.length && importedBooks.length) {
+      console.log("RENDERING HTML NOW!!!");
+      setContentStatus("Rendering HTML...");
+      handleHTML();
+    }
+  }, [booksToImport, importedBooks, pk, resource, title, language, textDirection, setHtml]);
 
   return (
     <div>
@@ -181,13 +181,13 @@ export default function AlignedBible(props) {
       <br />
 
       <Card variant="outlined">
-      <CardContent>
+        <CardContent>
           <Typography
             color="textPrimary"
             gutterBottom
             display="inline"
           >
-            <b>{`Owner:`}</b> {owner} <b>{"Repo:"}</b> {repo} <b>{refType+":"}</b> {branchOrTag}{(refType!=="Commit"?" ("+commitID+")":"")} <a href={`https://git.door43.org/${owner}/${repo}/src/branch/${branchOrTag}`} target={"_blank"} rel={"noopener noreferrer"} style={{fontSize: "12px"}}>{"See on DCS"}</a>
+            <b>{`Owner:`}</b> {owner} <b>{"Repo:"}</b> {repo} <b>{refType + ":"}</b> {branchOrTag}{(refType !== "Commit" ? " (" + commitID + ")" : "")} <a href={`https://git.door43.org/${owner}/${repo}/src/branch/${branchOrTag}`} target={"_blank"} rel={"noopener noreferrer"} style={{ fontSize: "12px" }}>{"See on DCS"}</a>
           </Typography>
         </CardContent>
         <CardActions>
@@ -219,11 +219,11 @@ export default function AlignedBible(props) {
             color="textPrimary"
             display="inline"
           >
-            {`${contentStatus}`}
+            {contentStatus}
           </Typography>
         </CardContent>
       </Card>
-    
+
       <Card variant="outlined">
         <CardContent>
           <Typography
@@ -234,7 +234,7 @@ export default function AlignedBible(props) {
           </Typography>
         </CardContent>
       </Card>
-    
+
       <Card variant="outlined">
         <CardContent>
           <Typography
@@ -246,7 +246,7 @@ export default function AlignedBible(props) {
           </Typography>
         </CardContent>
       </Card>
-    
+
     </div>
   );
 }
