@@ -8,7 +8,7 @@ import Button from "@material-ui/core/Button";
 import { AppContext } from '../App.context';
 
 import BibleReference, { useBibleReference } from "bible-reference-rcl";
-import * as dcs from '../utils/dcsApis';
+// import * as dcs from '../utils/dcsApis';
 import { renderHTML } from '../utils/printPreview';
 import {Proskomma} from 'proskomma';
 import {clearCaches, getFileCached} from '../utils/zipUtils'

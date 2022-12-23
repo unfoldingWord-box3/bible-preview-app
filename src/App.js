@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AppContextProvider } from './App.context';
 import AlignedBible from "./components/AlignedBible";
-import { fetchManifest, fetchTCManifest } from "./utils/dcsApis";
+// import { fetchManifest, fetchTCManifest } from "./utils/dcsApis";
 import { BibleBookData } from "./common/books";
 import { fetchRepositoryZipFile, cachedGetManifest, getFileCached } from "./utils/zipUtils";
 
