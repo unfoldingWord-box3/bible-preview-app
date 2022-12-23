@@ -3,7 +3,7 @@ import yaml from 'yaml';
 import localforage from 'localforage';
 import { setup } from 'axios-cache-adapter';
 //import _ from "lodash";
-import { base_url } from '../common/constants'
+import { base_url, apiPath } from '../common/constants'
 import * as books from '../common/books'
 
 const baseURL = base_url+'/';
@@ -87,6 +87,20 @@ export async function fetchManifest(username, repository, branch) {
       catch (yamlError) {
         console.error(`${username} ${repository} manifest yaml parse error: ${yamlError.message}`);
       }
+    } 
+  } catch (geterror) {
+    console.error("Error:",geterror,"on:",uri);
+  }
+  return null;
+}
+
+export async function fetchGitRefs(username, repository, ref) {
+  const uri = Path.join(apiPath, "repos", username, repository, "git", ref);
+  try {
+    const { data } = await Door43Api.get(uri, {});
+    if ( data ) {
+      // success
+      return data;
     } 
   } catch (geterror) {
     console.error("Error:",geterror,"on:",uri);

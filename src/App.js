@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { AppContextProvider } from './App.context';
 import AlignedBible from "./components/AlignedBible";
-// import { fetchManifest, fetchTCManifest } from "./utils/dcsApis";
 import { BibleBookData } from "./common/books";
 import { fetchRepositoryZipFile, cachedGetManifest, getFileCached } from "./utils/zipUtils";
+import { fetchGitRefs } from "./utils/dcsApis";
 
 
 export default function App(props) {
@@ -18,6 +18,8 @@ export default function App(props) {
     let supportedBooks = null;
     let isTcRepo = false;
     let resource = "";
+    let commitID = "";
+    let refType = "";
 
     if (!owner)
       owner = "unfoldingWord";
@@ -31,11 +33,11 @@ export default function App(props) {
       initialVerse = "1";
 
     const loadManifest = async () => {
-      const zipFetchSucceeded = await fetchRepositoryZipFile({ username: owner, repository: repo, branch: branchOrTag });
+      const zipFetchSucceeded = await fetchRepositoryZipFile({ username: owner, repository: repo, branch: commitID });
       if (zipFetchSucceeded) {
         if (repo.endsWith("_book")) {
           isTcRepo = true;
-          const manifestText = await getFileCached({ username: owner, repository: repo, path: "manifest.json", branch: branchOrTag });
+          const manifestText = await getFileCached({ username: owner, repository: repo, path: "manifest.json", branch: commitID });
           if (manifestText) {
             const manifest = JSON.parse(manifestText);
             title = manifest.resource.id.toUpperCase();
@@ -46,7 +48,7 @@ export default function App(props) {
           }
         } else {
           console.log("Fetching RC manifest: ", owner, repo, branchOrTag);
-          const manifest = await cachedGetManifest({ username: owner, repository: repo, branch: branchOrTag });
+          const manifest = await cachedGetManifest({ username: owner, repository: repo, branch: commitID });
           console.log(manifest);
           if (manifest) {
             title = manifest.dublin_core.title;
@@ -84,12 +86,40 @@ export default function App(props) {
         textDirection,
         resource,
         title,
+        commitID,
+        refType,
         isTcRepo,
       };
 
       setResourceComponent(<AlignedBible {...props} />);
-    }
-    loadManifest()
+    };
+
+    const loadCommitInfo = async () => {
+      let commitInfo = await fetchGitRefs(owner, repo, "refs/heads/"+branchOrTag);
+      console.log("FIRST COMMIT INFO!!!!!: ", commitInfo);
+      if (commitInfo) {
+        refType = "Branch";
+        commitID = commitInfo[0].object.sha;
+      } else {
+        commitInfo = await fetchGitRefs(owner, repo, "refs/tags/"+branchOrTag);
+        if (commitInfo) {
+          refType = "Tag"
+          commitID = commitInfo[0].object.sha;
+        } else {
+          commitInfo = await fetchGitRefs(owner, repo, "commits/"+branchOrTag);
+          if (commitInfo) {
+            commitID = commitInfo.sha;
+            refType = "Commit";
+          }
+        }
+      }
+      if (commitID) {
+        commitID = commitID.slice(0, 10);
+        loadManifest();
+      }
+    };
+
+    loadCommitInfo();
   }, []);
 
   return (

@@ -47,6 +47,8 @@ export default function AlignedBible(props) {
     resource,
     title,
     supportedBooks,
+    commitID,
+    refType,
     onChange,
     style
   } = props || {};
@@ -120,7 +122,7 @@ export default function AlignedBible(props) {
             filename = repo+'.usfm';            
           else
             filename = books.usfmNumberName(bookId)+'.usfm';
-          const text = await getFileCached({username: owner, repository: repo, path: filename, branch: branchOrTag}); // dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo)
+          const text = await getFileCached({username: owner, repository: repo, path: filename, branch: commitID}); // dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo)
           setContentStatus("Book Retrieved: "+bookId);
           console.log("Book Retrieved: "+bookId);
           // note! not asynchronous
@@ -158,7 +160,7 @@ export default function AlignedBible(props) {
     }
 
     fetchData();
-  }, [pk, importedBooks, booksToImport, isTcRepo, language, owner, branchOrTag, repo, resource, textDirection, title, loadingBooks, setLoadingBooks, setImportedBooks, setBooksToImport, setHtml]);
+  }, [pk, importedBooks, booksToImport, isTcRepo, language, owner, commitID, repo, resource, textDirection, title, loadingBooks, setLoadingBooks, setImportedBooks, setBooksToImport, setHtml]);
 
   return (
     <div>
@@ -185,7 +187,7 @@ export default function AlignedBible(props) {
             gutterBottom
             display="inline"
           >
-            <b>{`Owner:`}</b> {owner} <b>{"Repo:"}</b> {repo} <b>{"Branch:"}</b> {branchOrTag} <a href={`https://git.door43.org/${owner}/${repo}/src/branch/${branchOrTag}`} target={"_blank"} rel={"noopener noreferrer"} style={{fontSize: "12px"}}>{"See on DCS"}</a>
+            <b>{`Owner:`}</b> {owner} <b>{"Repo:"}</b> {repo} <b>{refType+":"}</b> {branchOrTag}{(refType!=="Commit"?" ("+commitID+")":"")} <a href={`https://git.door43.org/${owner}/${repo}/src/branch/${branchOrTag}`} target={"_blank"} rel={"noopener noreferrer"} style={{fontSize: "12px"}}>{"See on DCS"}</a>
           </Typography>
         </CardContent>
         <CardActions>
