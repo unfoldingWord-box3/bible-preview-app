@@ -241,7 +241,7 @@ export default function AlignedBible(props) {
             display="inline"
             variant="body1"
           >
-            <div dangerouslySetInnerHTML={{ __html: html.replace("columns: 2", "columns:  1").replace('class="footnote">', 'class="footnote" style="font-style: italic;font-size: .8em;padding: 0 10px;">*') }}></div>
+            <div dangerouslySetInnerHTML={{ __html: html.replace("columns: 2", "columns:  1").replace("span.footnote {float: footnote; }", "span.footnote {float: footnote;font-style: italic;font-size: .8em;padding: 5px; } span.footnote:before {content: '[f.n.: '} span.footnote:after {content: ']'}") }}></div>
           </Typography>
         </CardContent>
       </Card>
