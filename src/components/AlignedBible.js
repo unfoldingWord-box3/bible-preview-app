@@ -86,7 +86,6 @@ export default function AlignedBible(props) {
   useEffect(() => {
     if (! booksToImport.includes(state.bookId) && ! importedBooks.includes(state.bookId)) {
       setBooksToImport([...booksToImport, ...[state.bookId]]);
-      console.log("NOW BOOKS TO IMPORT: ", [booksToImport, ...[state.bookId]]);
     }
   }, [state.bookId, booksToImport, importedBooks, setBooksToImport]);
 
@@ -103,13 +102,9 @@ export default function AlignedBible(props) {
  *    },
   */
   useEffect(() => {
-    console.log("Start of effect to fetchData:", booksToImport, loadingBooks);
     if (! booksToImport.length || loadingBooks)
       return false;
-
     setLoadingBooks(true);
-    console.log("FIRST IMPORTED BOOKS:", importedBooks);
-    console.log("BOOKS:", booksToImport)
 
     const fetchData = async () => {
       let dirty = false;
@@ -117,17 +112,17 @@ export default function AlignedBible(props) {
       console.log("fetchData books:", booksToImport);
       for(let i = 0; i < booksToImport.length; i++) {
         const bookId = booksToImport[i];
-        console.log(bookId);
         if ( ! importedBooks.includes(bookId) ) {
-          console.log("Book needs to be imported:", bookId);
           setContentStatus("Loading: "+bookId);
+          console.log("Loading: "+bookId);
           let filename;
           if (isTcRepo)
             filename = repo+'.usfm';            
           else
             filename = books.usfmNumberName(bookId)+'.usfm';
           const text = await getFileCached({username: owner, repository: repo, path: filename, branch: branchOrTag}); // dcs.fetchBook(owner, repo, branchOrTag, bookId, isTcRepo)
-          setContentStatus("Book Retrieved");
+          setContentStatus("Book Retrieved: "+bookId);
+          console.log("Book Retrieved: "+bookId);
           // note! not asynchronous
           try {
             pk.importDocument(
@@ -155,7 +150,7 @@ export default function AlignedBible(props) {
           textDirection: textDirection,
           books: importedBooks,
         });
-        // console.log("doRender html is:", html); // the object has some interesting stuff in it
+        console.log("doRender html is:", html.output); // the object has some interesting stuff in it
         setHtml(html.output);
       }
       setBooksToImport([]);
@@ -240,13 +235,12 @@ export default function AlignedBible(props) {
     
       <Card variant="outlined">
         <CardContent>
-          {/* <ReactJson src={html} /> */}
           <Typography
             color="textPrimary"
             display="inline"
             variant="body1"
           >
-            <div dangerouslySetInnerHTML={{ __html: html }}></div>
+            <div dangerouslySetInnerHTML={{ __html: html.replace("columns: 2", "columns:  1") }}></div>
           </Typography>
         </CardContent>
       </Card>

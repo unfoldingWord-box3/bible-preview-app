@@ -77,10 +77,8 @@ export async function fetchManifest(username, repository, branch) {
   // example: https://qa.door43.org/api/v1/repos/translate_test/en_ta/raw/manifest.yaml
   //          https://qa.door43.org/translate_test/en_ta/raw/branch/master/manifest.yaml
   const uri = Path.join(username, repository, 'raw', 'branch', branch, 'manifest.yaml');
-  console.log("URI: ", uri);
   try {
     const { data } = await Door43Api.get(uri, {});
-    console.log("DATA: ", data);
     if ( data ) {
       // success
       try {
@@ -105,7 +103,6 @@ export async function fetchTCManifest(username, repository, ref) {
     const { data } = await Door43Api.get(uri, {});
     if ( data ) {
       // success
-      console.log(data);
       return data;
     } 
   } catch (geterror) {

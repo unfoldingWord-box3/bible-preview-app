@@ -9,12 +9,12 @@ export function AppContextProvider({
   children,
 }) {
   const [printPreview, setPrintPreview] = useState(false)
-  const [html, setHtml] = useState(null);
+  const [html, setHtml] = useState("");
 
   useEffect(() => {
     if ( printPreview && html ) {
       console.log("html data is available")
-      const newPage = window.open('','','_window');
+      const newPage = window.open('', '', '_window');
       newPage.document.head.innerHTML = "<title>PDF Preview</title>";
       const script = newPage.document.createElement('script');
       script.src = 'https://unpkg.com/pagedjs/dist/paged.polyfill.js';
@@ -39,6 +39,11 @@ export function AppContextProvider({
       }
       div#page-2 {
         clear: right;
+      }
+      div.bibleBookBody {
+        columns: 2;
+        column-gap: 2em;
+        widows: 2;
       }
       `;
       style.innerHTML = newStyles + html.replace(/^[\s\S]*<style>/, "").replace(/<\/style>[\s\S]*/, "");

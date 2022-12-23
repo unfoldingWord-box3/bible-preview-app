@@ -33,11 +33,9 @@ export default function App(props) {
     const loadManifest = async () => {
       const zipFetchSucceeded = await fetchRepositoryZipFile({ username: owner, repository: repo, branch: branchOrTag });
       if (zipFetchSucceeded) {
-        console.log("REPO!!!! ", repo, repo.endsWith("_book"));
         if (repo.endsWith("_book")) {
           isTcRepo = true;
           const manifestText = await getFileCached({ username: owner, repository: repo, path: "manifest.json", branch: branchOrTag });
-          console.log("TC", manifestText);
           if (manifestText) {
             const manifest = JSON.parse(manifestText);
             title = manifest.resource.id.toUpperCase();
