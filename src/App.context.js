@@ -2,6 +2,11 @@ import React, {
   useEffect, 
   useState } from 'react';
 import PropTypes from 'prop-types';
+import { BibleBookData } from "./common/books";
+import { fetchRepositoryZipFile, cachedGetManifest, getFileCached } from "./utils/dcsCacheUtils";
+import { fetchGitRefs } from "./utils/dcsApis";
+import cloneDeep from 'lodash/cloneDeep';
+
 
 export const AppContext = React.createContext();
 
@@ -10,6 +15,135 @@ export function AppContextProvider({
 }) {
   const [printPreview, setPrintPreview] = useState(false)
   const [html, setHtml] = useState("");
+  const [resourceInfo, setResourceInfo] = useState(null);
+
+  useEffect(() => {
+    const info = {
+      owner: "unfoldingWord",
+      repo: "en_ult",
+      ref: "master",
+      refType: "branch",
+      language: "en",
+      textDirection: "ltr",
+      supportedBooks: [],
+      resource: "",
+      subject: "",
+      title: "",
+      commitID: "",
+      bibleReference: {
+        book: "tit",
+        chapter: "1",
+        verse: "1",
+      }
+    };
+
+    const urlParts = new URL(window.location.href).pathname.split('/').slice(1);
+    if (urlParts[0])
+      info.owner = urlParts[0] || info.owner;
+    if (urlParts[1])
+      info.repo = urlParts[1]
+    if (urlParts[2])
+      info.ref = urlParts[2];
+    if (urlParts[3])
+      info.bibleReference.book = urlParts[3];
+    if (urlParts[4])
+      info.bibleReference.chapter = urlParts[4];
+    if (urlParts[5])
+      info.bibleReference.verse = urlParts[5];
+    
+    setResourceInfo(info);
+  }, []);
+
+  useEffect(() => {
+    const loadManifest = async () => {
+      let info = cloneDeep(resourceInfo);
+      const zipFetchSucceeded = await fetchRepositoryZipFile({ username: info.owner, repository: info.repo, ref: info.commitID });
+      if (zipFetchSucceeded) {
+        if (info.repo.endsWith("_book")) {
+          info.isTcRepo = true;
+          const manifestText = await getFileCached({ username: info.owner, repository: info.repo, path: "manifest.json", ref: info.commitID });
+          if (manifestText) {
+            const manifest = JSON.parse(manifestText);
+            info.title = manifest.resource.id.toUpperCase();
+            info.language = manifest.target_language.id;
+            info.textDirection = manifest.target_language.direction;
+            info.supportedBooks = [manifest.project.id];
+            info.resource = manifest.resource.id;
+            info.subject = "Bible";
+          }
+        } else {
+          console.log("Fetching RC manifest...");
+          const manifest = await cachedGetManifest({ username: info.owner, repository: info.repo, ref: info.commitID });
+          if (manifest) {
+            info.title = manifest.dublin_core.title;
+            info.language = manifest.dublin_core.language.identifier;
+            info.textDirection = manifest.dublin_core.language.direction;
+            info.supportedBooks = manifest.projects.map(project => project.identifier).filter(id => BibleBookData[id] !== undefined);
+            info.resource = manifest.dublin_core.identifier;
+            info.subject = manifest.dublin_core.subject;
+          } else {
+            info = null;
+          }
+        }
+      }
+
+      if (info) {
+        if (!info.bibleReference.book || !info.supportedBooks.includes(info.bibleReference.book)) {
+          if (info.supportedBooks.length) {
+            info.bibleReference.book = info.supportedBooks[0];
+          }
+          else {
+            info.bibleReference.book = "tit";
+          }
+        }
+        window.history.pushState({ id: "100" }, "Page", `/${info.owner}/${info.repo}/${info.ref}/${info.bibleReference.book}/${info.bibleReference.chapter!=="1"||info.bibleReference.verse!=="1"?`${info.bibleReference.chapter}/${info.bibleReference.verse}/`:""}`);
+      }
+
+      setResourceInfo(info);
+    };
+
+    if (resourceInfo && resourceInfo.commitID && ! resourceInfo.subject && ! resourceInfo.title) {
+      loadManifest().catch(console.error);
+    }
+  }, [resourceInfo]);
+
+  useEffect(() => {
+    const loadCommitInfo = async () => {
+      let info = cloneDeep(resourceInfo);
+      let commitInfo = await fetchGitRefs(info.owner, info.repo, "refs/heads/" + info.ref);
+      console.log("HEADS COMMIT INFO!!!!!: ", commitInfo);
+      let commitID = "";
+      if (commitInfo) {
+        info.refType = "Branch";
+        commitID = commitInfo[0].object.sha;
+      } else {
+        commitInfo = await fetchGitRefs(info.owner, info.repo, "refs/tags/" + info.ref);
+        console.log("TAGS COMMIT INFO!!!!!: ", commitInfo);
+        if (commitInfo) {
+          info.refType = "Tag"
+          commitID = commitInfo[0].object.sha;
+        } else {
+          commitInfo = await fetchGitRefs(info.owner, info.repo, "commits/" + info.ref);
+          console.log("COMMITS COMMIT INFO!!!!!: ", commitInfo);
+          if (commitInfo) {
+            commitID = commitInfo.sha;
+            info.refType = "Commit";
+          }
+        }
+      }
+
+      if (commitID)
+        info.commitID = commitID.slice(0, 10);
+
+      console.log("SETTING COMMIT ID:", info.commitID);
+      console.log("info: ", info);
+      setResourceInfo(info);
+    };
+
+    if (resourceInfo && ! resourceInfo.commitID && ! resourceInfo.ready) {
+      loadCommitInfo().catch(console.error);
+    }
+  }, [resourceInfo]);
 
   useEffect(() => {
     if ( printPreview && html ) {
@@ -58,6 +192,7 @@ export function AppContextProvider({
     state: {
       printPreview,
       html,
+      resourceInfo,
     },
     actions: {
       setPrintPreview,
