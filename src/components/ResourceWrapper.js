@@ -5,7 +5,6 @@ import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
 import { AppContext } from '../App.context';
 import Bible from './Bible';
-import NotImplemented from './NotImplemented';
 
 export default function ResourceWrapper(propse) {
 	const [resourceComponent, setResourceComponent] = useState(null);
@@ -15,6 +14,9 @@ export default function ResourceWrapper(propse) {
     state: {
       resourceInfo,
       html,
+    },
+    actions: {
+      setHtml,
     },
   } = useContext(AppContext)
 
@@ -30,9 +32,9 @@ export default function ResourceWrapper(propse) {
 				setResourceComponent(<Bible />);
 				break;
 			default:
-				setResourceComponent(<NotImplemented />);
+				setHtml(`${resourceInfo.subject} is not yet supported.`);
 		}
-	}, [resourceInfo]);
+	}, [resourceInfo, setHtml]);
 
 	return (
 		<>

@@ -3,10 +3,11 @@ import React, {
   useState } from 'react';
 import PropTypes from 'prop-types';
 import { BibleBookData } from "./common/books";
+import { base_url, apiPath } from './common/constants';
 import { fetchRepositoryZipFile, cachedGetManifest, getFileCached } from "./utils/dcsCacheUtils";
 import { fetchGitRefs } from "./utils/dcsApis";
 import cloneDeep from 'lodash/cloneDeep';
-
+import { RepositoryApi } from "dcs-js";
 
 export const AppContext = React.createContext();
 
@@ -16,6 +17,7 @@ export function AppContextProvider({
   const [printPreview, setPrintPreview] = useState(false)
   const [html, setHtml] = useState("");
   const [resourceInfo, setResourceInfo] = useState(null);
+  const [dcsRepoClient, setDcsRepoClient] = useState(null);
 
   useEffect(() => {
     const info = {
@@ -52,7 +54,63 @@ export function AppContextProvider({
       info.bibleReference.verse = urlParts[5];
     
     setResourceInfo(info);
+
+    const repoClient = new RepositoryApi({basePath: `${base_url}/${apiPath}`});
+    setDcsRepoClient(repoClient);
   }, []);
+
+  useEffect(() => {
+    const loadCommitInfo = async () => {
+      try {
+        const repoRequest = await dcsRepoClient.repoGet({
+          owner: resourceInfo.owner,
+          repo: resourceInfo.repo,
+        });
+        console.log(repoRequest);
+      } catch(e) {
+        console.error(e);
+        setHtml(`Repo <b>${resourceInfo.owner}/${resourceInfo.repo}</b> does not exist`);
+        return;
+      }
+
+      let info = cloneDeep(resourceInfo);
+      let commitInfo = await fetchGitRefs(info.owner, info.repo, "refs/heads/" + info.ref);
+      console.log("HEADS COMMIT INFO!!!!!: ", commitInfo);
+      let commitID = "";
+      if (commitInfo) {
+        info.refType = "Branch";
+        commitID = commitInfo[0].object.sha;
+      } else {
+        commitInfo = await fetchGitRefs(info.owner, info.repo, "refs/tags/" + info.ref);
+        console.log("TAGS COMMIT INFO!!!!!: ", commitInfo);
+        if (commitInfo) {
+          info.refType = "Tag"
+          commitID = commitInfo[0].object.sha;
+        } else {
+          commitInfo = await fetchGitRefs(info.owner, info.repo, "commits/" + info.ref);
+          console.log("COMMITS COMMIT INFO!!!!!: ", commitInfo);
+          if (commitInfo) {
+            commitID = commitInfo.sha;
+            info.refType = "Commit";
+          } else {
+            setHtml(`Bad reference given: ${info.ref}`)
+            return;
+          }
+        }
+      }
+
+      if (commitID)
+        info.commitID = commitID.slice(0, 10);
+
+      console.log("SETTING COMMIT ID:", info.commitID);
+      console.log("info: ", info);
+      setResourceInfo(info);
+    };
+
+    if (resourceInfo && ! resourceInfo.commitID && ! resourceInfo.ready && dcsRepoClient) {
+      loadCommitInfo().catch(console.error);
+    }
+  }, [resourceInfo, dcsRepoClient]);
 
   useEffect(() => {
     const loadManifest = async () => {
@@ -82,7 +140,7 @@ export function AppContextProvider({
             info.resource = manifest.dublin_core.identifier;
             info.subject = manifest.dublin_core.subject;
           } else {
-            info = null;
+            return;
           }
         }
       }
@@ -104,44 +162,6 @@ export function AppContextProvider({
 
     if (resourceInfo && resourceInfo.commitID && ! resourceInfo.subject && ! resourceInfo.title) {
       loadManifest().catch(console.error);
-    }
-  }, [resourceInfo]);
-
-  useEffect(() => {
-    const loadCommitInfo = async () => {
-      let info = cloneDeep(resourceInfo);
-      let commitInfo = await fetchGitRefs(info.owner, info.repo, "refs/heads/" + info.ref);
-      console.log("HEADS COMMIT INFO!!!!!: ", commitInfo);
-      let commitID = "";
-      if (commitInfo) {
-        info.refType = "Branch";
-        commitID = commitInfo[0].object.sha;
-      } else {
-        commitInfo = await fetchGitRefs(info.owner, info.repo, "refs/tags/" + info.ref);
-        console.log("TAGS COMMIT INFO!!!!!: ", commitInfo);
-        if (commitInfo) {
-          info.refType = "Tag"
-          commitID = commitInfo[0].object.sha;
-        } else {
-          commitInfo = await fetchGitRefs(info.owner, info.repo, "commits/" + info.ref);
-          console.log("COMMITS COMMIT INFO!!!!!: ", commitInfo);
-          if (commitInfo) {
-            commitID = commitInfo.sha;
-            info.refType = "Commit";
-          }
-        }
-      }
-
-      if (commitID)
-        info.commitID = commitID.slice(0, 10);
-
-      console.log("SETTING COMMIT ID:", info.commitID);
-      console.log("info: ", info);
-      setResourceInfo(info);
-    };
-
-    if (resourceInfo && ! resourceInfo.commitID && ! resourceInfo.ready) {
-      loadCommitInfo().catch(console.error);
     }
   }, [resourceInfo]);
 

@@ -15,6 +15,7 @@
     "axios": "0.21.1",
     "axios-cache-adapter": "^2.7.3",
     "bible-reference-rcl": "^1.1.0",
+    "dcs-js": "^1.4.1",
     "jszip": "^3.10.1",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
