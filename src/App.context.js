@@ -1,6 +1,5 @@
-import React, { 
-  useEffect, 
-  useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useBibleReference } from 'bible-reference-rcl';
 import PropTypes from 'prop-types';
 import { BibleBookData } from "./common/books";
 import { base_url, apiPath } from './common/constants';
@@ -8,16 +7,101 @@ import { fetchRepositoryZipFile, cachedGetManifest, getFileCached } from "./util
 import { fetchGitRefs } from "./utils/dcsApis";
 import cloneDeep from 'lodash/cloneDeep';
 import { RepositoryApi } from "dcs-js";
+import { clearCaches } from './utils/dcsCacheUtils'
+import { Proskomma } from 'proskomma';
+
 
 export const AppContext = React.createContext();
+
+const PkSelectors = [
+  {
+      name: "lang",
+      type: "string",
+      regex: "^[^\\s]+$"
+  },
+  {
+      name: "abbr",
+      type: "string",
+      regex: "^[A-za-z0-9_-]+$"
+  }
+];
 
 export function AppContextProvider({
   children,
 }) {
-  const [printPreview, setPrintPreview] = useState(false)
-  const [html, setHtml] = useState("");
-  const [resourceInfo, setResourceInfo] = useState(null);
   const [dcsRepoClient, setDcsRepoClient] = useState(null);
+  const [resourceInfo, setResourceInfo] = useState(null);
+  const [pk, setPk] = useState(new Proskomma(PkSelectors));
+  const [booksToImport, setBooksToImport] = useState([]);
+  const [html, setHtml] = useState("");
+  const [htmlByBook, setHtmlByBook] = useState({});
+  const [printPreview, setPrintPreview] = useState(false);
+  const [printPreviewHtml, setPrintPreviewHtml] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const importedBooks = useMemo(() => {
+    if (pk.documentList().length) {
+      return pk.documentList().map(doc => ('bookCode' in doc.headers ? doc.headers['bookCode'].toLowerCase() : ""));
+    } else {
+      return [];
+    }
+  }, [pk]);
+
+  const { state: bibleState, actions: bibleActions } = useBibleReference({
+    initialBook: 'gen',
+    initialChapter: '1',
+    initialVerse: '1',
+    supportedBooks: [],
+  });
+
+  const resetPk = () => {
+    setPk(new Proskomma(PkSelectors));
+    clearCaches();
+  };
+
+  const handleLoadAllBooks = () => {
+    const books = [];
+    console.log(resourceInfo.supportedBooks);
+    resourceInfo.supportedBooks.forEach(bookID => {
+      if (!importedBooks.includes(bookID))
+        books.push(bookID);
+    })
+    setBooksToImport(books);
+  };
+
+  const handleClearBooks = () => {
+    resetPk();
+  }
+
+  const handlePrint = () => {
+    setPrintPreview(true);
+  }
+  
+  // create the value for the context provider
+  const context = {
+    state: {
+      resourceInfo,
+      pk,
+      bibleState,
+      bibleActions,
+      bookID: bibleState.bookId,
+      importedBooks,
+      printPreview,
+      html,
+      htmlByBook,
+      printPreviewHtml,
+    },
+    actions: {
+      setPrintPreview,
+      setHtmlByBook,
+      setHtml,
+      setPk,
+      resetPk,
+      handleLoadAllBooks,
+      handleClearBooks,
+      handlePrint,
+    },
+  };
 
   useEffect(() => {
     const info = {
@@ -158,16 +242,76 @@ export function AppContextProvider({
       }
 
       setResourceInfo(info);
+
+      bibleActions.applyBooksFilter(info.supportedBooks);
+      bibleActions.goToBookChapterVerse(info.bibleReference.book, info.bibleReference.chapter, info.bibleReference.verse);
     };
 
-    if (resourceInfo && resourceInfo.commitID && ! resourceInfo.subject && ! resourceInfo.title) {
+    if (bibleActions && resourceInfo && resourceInfo.commitID && ! resourceInfo.subject && ! resourceInfo.title) {
       loadManifest().catch(console.error);
     }
-  }, [resourceInfo]);
+  }, [resourceInfo, bibleActions]);
 
   useEffect(() => {
-    if ( printPreview && html ) {
-      console.log("html data is available")
+    if (!booksToImport.includes(bibleState.bookId) && ! importedBooks.includes(bibleState.bookId)) {
+      setBooksToImport([...booksToImport, bibleState.bookId]);
+    }
+  }, [bibleState.bookId, booksToImport, importedBooks, setBooksToImport]);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      for(let i = 0; i < booksToImport.length; i++) {
+        const bookID = booksToImport[i];
+        if (!importedBooks.includes(bookID)) {
+          let status = "Loading: " + bookID;
+          setContentStatus(status);
+          console.log(status);
+          let filename;
+          if (resourceInfo.isTcRepo)
+            filename = resourceInfo.repo + '.usfm';
+          else
+            filename = books.usfmNumberName(bookID) + '.usfm';
+          const content = await getFileCached({ username: resourceInfo.owner, repository: resourceInfo.repo, path: filename, ref: resourceInfo.commitID });
+          status = "Book Retrieved from DCS: " + bookID;
+          setContentStatus(status);
+          console.log(status);
+          try {
+            let status = `Importing into Proskomma: ${bookID}...`;
+            setContentStatus(status)
+            console.log(status);
+            const lang = resourceInfo.language;
+            pk.importDocument(
+              {lang, abbr: resourceInfo.resource},
+              "usfm",
+              content,
+            );
+            console.log(pk.documents)
+            status = `Imported into Proskomma: ${bookID}${(i === (booksToImport.length-1)?"; Rendering HTML...":"")}`;
+            setContentStatus(status);
+            console.log(status);
+            setPk(pk);
+          } catch (e) {
+              console.log("ERROR pk.importDouments: ", e);
+          }
+        }
+      }
+      setBooksToImport([]);
+      setLoading(false);
+    }
+
+    if (booksToImport.length && ! loading) {
+      setLoading(true);
+      fetchContent().catch(console.error);
+    }
+  }, [pk, resourceInfo, loading, booksToImport, importedBooks]);
+
+  useEffect(() => {
+    setPrintPreviewHtml("");
+  }, [htmlByBook]);
+
+  useEffect(() => {
+    const showPrintPreview = async () => {
+      console.log("html data is available");
       const newPage = window.open('', '', '_window');
       newPage.document.head.innerHTML = "<title>PDF Preview</title>";
       const script = newPage.document.createElement('script');
@@ -200,25 +344,16 @@ export function AppContextProvider({
         widows: 2;
       }
       `;
-      style.innerHTML = newStyles + html.replace(/^[\s\S]*<style>/, "").replace(/<\/style>[\s\S]*/, "");
+      style.innerHTML = newStyles + printPreviewHtml.replace(/^[\s\S]*<style>/, "").replace(/<\/style>[\s\S]*/, "");
       newPage.document.head.appendChild(style);
-      newPage.document.body.innerHTML = html.replace(/^[\s\S]*<body>/, "").replace(/<\/body>[\s\S]*/, "");
+      newPage.document.body.innerHTML = printPreviewHtml.replace(/^[\s\S]*<body>/, "").replace(/<\/body>[\s\S]*/, "");
       setPrintPreview(false);
-    }
-  }, [printPreview, html])
+    };
 
-  // create the value for the context provider
-  const context = {
-    state: {
-      printPreview,
-      html,
-      resourceInfo,
-    },
-    actions: {
-      setPrintPreview,
-      setHtml,
-    },
-  };
+    if (printPreview && printPreviewHtml) {
+      showPrintPreview();
+    }
+  }, [printPreview, printPreviewHtml])
 
   return (
     <AppContext.Provider value={context}>

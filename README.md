@@ -38,7 +38,23 @@ Imports needed/used:
 At app startup, the App Context creates an instance of Proskomma, storing it as state variable and including it in the Context state. The code is:
 
 ```js
-  const [pk, /*setPk*/] = useState(new Proskomma());
+  const [pk, /*setPk*/] = useState(new Proskomma([
+  {
+      name: "org",
+      type: "string",
+      regex: "^[^\\s]+$"
+  },
+  {
+      name: "lang",
+      type: "string",
+      regex: "^[^\\s]+$"
+  },
+  {
+      name: "abbr",
+      type: "string",
+      regex: "^[A-za-z0-9_-]+$"
+  }
+]));
 ```
 
 Note that there is not set function provided to update the state. Proskomma manages is own state via side effects of its API.

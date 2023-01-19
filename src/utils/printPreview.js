@@ -30,7 +30,7 @@ export const SINGLE_BOOK_CONFIG = {
   }
 };
 
-export async function renderHTML({ proskomma, language, resource, title, textDirection, books }) {
+export async function renderHTML({ proskomma, language, org, resource, title, textDirection, books }) {
   let response = {};
   let docSetIds = [language+'_'+resource];
   let _structure = [];
@@ -76,6 +76,7 @@ export async function renderHTML({ proskomma, language, resource, title, textDir
     title,
     uid: resource.toUpperCase(),
     language,
+    abbr: resource,
     textDirection,
     structure: _structure,
     i18n: {
