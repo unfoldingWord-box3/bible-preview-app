@@ -3,7 +3,8 @@
   text-align: center;
 }
 
-.p + .q {
+.p + .q,
+.d + .q {
   margin-top: 0.4em;
 }
 
