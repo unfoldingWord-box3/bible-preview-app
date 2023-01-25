@@ -26,8 +26,8 @@ export default function ResourceWrapper(props) {
       bibleState,
       bibleActions,
       contentStatus,
-      pkStatus,
       html,
+      importedBooks,
     },
     actions: {
       setHtml,

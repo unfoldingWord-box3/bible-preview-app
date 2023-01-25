@@ -9,6 +9,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { RepositoryApi } from "dcs-js";
 import { clearCaches } from './utils/dcsCacheUtils'
 import { Proskomma } from 'proskomma';
+import { usfmNumberName } from './common/books';
 
 
 export const AppContext = React.createContext();
@@ -38,6 +39,7 @@ export function AppContextProvider({
   const [printPreview, setPrintPreview] = useState(false);
   const [printPreviewHtml, setPrintPreviewHtml] = useState("");
   const [loading, setLoading] = useState(false);
+  const [contentStatus, setContentStatus] = useState("");
 
   const importedBooks = useMemo(() => {
     if (pk.documentList().length) {
@@ -90,6 +92,7 @@ export function AppContextProvider({
       html,
       htmlByBook,
       printPreviewHtml,
+      contentStatus,
     },
     actions: {
       setPrintPreview,
@@ -100,6 +103,7 @@ export function AppContextProvider({
       handleLoadAllBooks,
       handleClearBooks,
       handlePrint,
+      setContentStatus,
     },
   };
 
@@ -270,7 +274,7 @@ export function AppContextProvider({
           if (resourceInfo.isTcRepo)
             filename = resourceInfo.repo + '.usfm';
           else
-            filename = books.usfmNumberName(bookID) + '.usfm';
+            filename = usfmNumberName(bookID) + '.usfm';
           const content = await getFileCached({ username: resourceInfo.owner, repository: resourceInfo.repo, path: filename, ref: resourceInfo.commitID });
           status = "Book Retrieved from DCS: " + bookID;
           setContentStatus(status);

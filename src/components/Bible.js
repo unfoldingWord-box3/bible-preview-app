@@ -1,13 +1,8 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import "../styles.css";
-import Card from "@material-ui/core/Card";
-import CardContent from "@material-ui/core/CardContent";
-import Typography from "@material-ui/core/Typography";
 import { AppContext } from '../App.context';
 
 import { renderHTML } from '../utils/printPreview';
-import { getFileCached } from '../utils/dcsCacheUtils'
-import * as books from '../common/books';
 
 
 export default function Bible(props) {
@@ -21,11 +16,12 @@ export default function Bible(props) {
       htmlByBook,
       printPreview,
       printPreviewHtml,
+      loading,
     },
     actions: {
-      setPk,
       setHtmlByBook,
       setPrintPreviewHtml,
+      setContentStatus,
     }
   } = useContext(AppContext)
 
@@ -43,7 +39,7 @@ export default function Bible(props) {
       });
       console.log("doRender html for "+bookID+" is:", bookHtml.output); // the object has some interesting stuff in it
       htmlByBook[bookID] = bookHtml.output;
-      setHtmlByBook(bookHtml.output);
+      setHtmlByBook(htmlByBook);
       let status = "Rendered HTML for "+bookID;
       setContentStatus(status);
       console.log(status);
@@ -53,7 +49,7 @@ export default function Bible(props) {
     if (! loading && importedBooks.includes(bookID) && ! htmlByBook[bookID]) {
       handleBookHtmlRendering().catch(console.error);
     }
-  }, [pk, loading, resourceInfo, bookID, importedBooks, htmlByBook, setHtmlByBook]);
+  }, [pk, loading, resourceInfo, bookID, importedBooks, htmlByBook, setHtmlByBook, setContentStatus]);
 
   useEffect(() => {
     const handlePrintPreviewHtmlRendering = async () => {
@@ -76,5 +72,7 @@ export default function Bible(props) {
     if (printPreview && ! printPreviewHtml && importedBooks.length) {
       handlePrintPreviewHtmlRendering().catch(console.error);
     }
-  }, [pk, resourceInfo, bookID, htmlByBook, printPreview, importedBooks, printPreviewHtml, setPrintPreviewHtml]);
+  }, [pk, resourceInfo, bookID, htmlByBook, printPreview, importedBooks, printPreviewHtml, setPrintPreviewHtml, setContentStatus]);
+
+  return (<>{htmlByBook[bookID]}</>)
 }
