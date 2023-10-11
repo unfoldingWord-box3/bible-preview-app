@@ -57,6 +57,7 @@ export function AppContextProvider({
 
     const repoClient = new RepositoryApi({basePath: `${base_url}/${apiPath}`});
     setDcsRepoClient(repoClient);
+    console.log("HERE!!!")
   }, []);
 
   useEffect(() => {
