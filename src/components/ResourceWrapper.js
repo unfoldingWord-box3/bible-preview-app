@@ -27,7 +27,9 @@ export default function ResourceWrapper(propse) {
 
     console.log(resourceInfo);
 		switch (resourceInfo.subject) {
-			case "Aligned Bible":
+      case "Hebrew Old Testament":
+      case "Greek New Testament":
+      case "Aligned Bible":
 			case "Bible":
 				setResourceComponent(<Bible />);
 				break;
